@@ -1,0 +1,161 @@
+ResNet(
+  3.85 M, 100.000% Params, 37.08 MMac, 99.810% MACs, 
+  (conv1): Sequential(
+    640, 0.017% Params, 71.1 KMac, 0.191% MACs, 
+    (0): Conv1d(512, 0.013% Params, 51.71 KMac, 0.139% MACs, 1, 64, kernel_size=(7,), stride=(2,), padding=(3,))
+    (1): BatchNorm1d(128, 0.003% Params, 12.93 KMac, 0.035% MACs, 64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (2): ReLU(0, 0.000% Params, 6.46 KMac, 0.017% MACs, )
+  )
+  (maxpool): MaxPool1d(0, 0.000% Params, 6.46 KMac, 0.017% MACs, kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+  (layer0): Sequential(
+    49.92 k, 1.297% Params, 2.56 MMac, 6.888% MACs, 
+    (0): ResidualBlock(
+      24.96 k, 0.648% Params, 1.28 MMac, 3.444% MACs, 
+      (conv1): Sequential(
+        12.48 k, 0.324% Params, 639.74 KMac, 1.722% MACs, 
+        (0): Conv1d(12.35 k, 0.321% Params, 629.95 KMac, 1.696% MACs, 64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, 0.003% Params, 6.53 KMac, 0.018% MACs, 64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(0, 0.000% Params, 3.26 KMac, 0.009% MACs, )
+      )
+      (conv2): Sequential(
+        12.48 k, 0.324% Params, 636.48 KMac, 1.713% MACs, 
+        (0): Conv1d(12.35 k, 0.321% Params, 629.95 KMac, 1.696% MACs, 64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, 0.003% Params, 6.53 KMac, 0.018% MACs, 64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU(0, 0.000% Params, 3.26 KMac, 0.009% MACs, )
+    )
+    (1): ResidualBlock(
+      24.96 k, 0.648% Params, 1.28 MMac, 3.444% MACs, 
+      (conv1): Sequential(
+        12.48 k, 0.324% Params, 639.74 KMac, 1.722% MACs, 
+        (0): Conv1d(12.35 k, 0.321% Params, 629.95 KMac, 1.696% MACs, 64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, 0.003% Params, 6.53 KMac, 0.018% MACs, 64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(0, 0.000% Params, 3.26 KMac, 0.009% MACs, )
+      )
+      (conv2): Sequential(
+        12.48 k, 0.324% Params, 636.48 KMac, 1.713% MACs, 
+        (0): Conv1d(12.35 k, 0.321% Params, 629.95 KMac, 1.696% MACs, 64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, 0.003% Params, 6.53 KMac, 0.018% MACs, 64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU(0, 0.000% Params, 3.26 KMac, 0.009% MACs, )
+    )
+  )
+  (layer1): Sequential(
+    182.14 k, 4.731% Params, 4.75 MMac, 12.784% MACs, 
+    (0): ResidualBlock(
+      83.07 k, 2.158% Params, 2.17 MMac, 5.832% MACs, 
+      (conv1): Sequential(
+        24.96 k, 0.648% Params, 652.29 KMac, 1.756% MACs, 
+        (0): Conv1d(24.7 k, 0.642% Params, 642.3 KMac, 1.729% MACs, 64, 128, kernel_size=(3,), stride=(2,), padding=(1,))
+        (1): BatchNorm1d(256, 0.007% Params, 6.66 KMac, 0.018% MACs, 128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(0, 0.000% Params, 3.33 KMac, 0.009% MACs, )
+      )
+      (conv2): Sequential(
+        49.54 k, 1.287% Params, 1.29 MMac, 3.467% MACs, 
+        (0): Conv1d(49.28 k, 1.280% Params, 1.28 MMac, 3.449% MACs, 128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, 0.007% Params, 6.66 KMac, 0.018% MACs, 128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        8.58 k, 0.223% Params, 222.98 KMac, 0.600% MACs, 
+        (0): Conv1d(8.32 k, 0.216% Params, 216.32 KMac, 0.582% MACs, 64, 128, kernel_size=(1,), stride=(2,))
+        (1): BatchNorm1d(256, 0.007% Params, 6.66 KMac, 0.018% MACs, 128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU(0, 0.000% Params, 3.33 KMac, 0.009% MACs, )
+    )
+    (1): ResidualBlock(
+      99.07 k, 2.573% Params, 2.58 MMac, 6.952% MACs, 
+      (conv1): Sequential(
+        49.54 k, 1.287% Params, 1.29 MMac, 3.476% MACs, 
+        (0): Conv1d(49.28 k, 1.280% Params, 1.28 MMac, 3.449% MACs, 128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, 0.007% Params, 6.66 KMac, 0.018% MACs, 128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(0, 0.000% Params, 3.33 KMac, 0.009% MACs, )
+      )
+      (conv2): Sequential(
+        49.54 k, 1.287% Params, 1.29 MMac, 3.467% MACs, 
+        (0): Conv1d(49.28 k, 1.280% Params, 1.28 MMac, 3.449% MACs, 128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, 0.007% Params, 6.66 KMac, 0.018% MACs, 128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU(0, 0.000% Params, 3.33 KMac, 0.009% MACs, )
+    )
+  )
+  (layer2): Sequential(
+    724.74 k, 18.823% Params, 9.43 MMac, 25.397% MACs, 
+    (0): ResidualBlock(
+      329.98 k, 8.570% Params, 4.3 MMac, 11.565% MACs, 
+      (conv1): Sequential(
+        99.07 k, 2.573% Params, 1.29 MMac, 3.476% MACs, 
+        (0): Conv1d(98.56 k, 2.560% Params, 1.28 MMac, 3.449% MACs, 128, 256, kernel_size=(3,), stride=(2,), padding=(1,))
+        (1): BatchNorm1d(512, 0.013% Params, 6.66 KMac, 0.018% MACs, 256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(0, 0.000% Params, 3.33 KMac, 0.009% MACs, )
+      )
+      (conv2): Sequential(
+        197.38 k, 5.126% Params, 2.57 MMac, 6.907% MACs, 
+        (0): Conv1d(196.86 k, 5.113% Params, 2.56 MMac, 6.889% MACs, 256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(512, 0.013% Params, 6.66 KMac, 0.018% MACs, 256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        33.54 k, 0.871% Params, 435.97 KMac, 1.174% MACs, 
+        (0): Conv1d(33.02 k, 0.858% Params, 429.31 KMac, 1.156% MACs, 128, 256, kernel_size=(1,), stride=(2,))
+        (1): BatchNorm1d(512, 0.013% Params, 6.66 KMac, 0.018% MACs, 256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU(0, 0.000% Params, 3.33 KMac, 0.009% MACs, )
+    )
+    (1): ResidualBlock(
+      394.75 k, 10.253% Params, 5.14 MMac, 13.832% MACs, 
+      (conv1): Sequential(
+        197.38 k, 5.126% Params, 2.57 MMac, 6.916% MACs, 
+        (0): Conv1d(196.86 k, 5.113% Params, 2.56 MMac, 6.889% MACs, 256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(512, 0.013% Params, 6.66 KMac, 0.018% MACs, 256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(0, 0.000% Params, 3.33 KMac, 0.009% MACs, )
+      )
+      (conv2): Sequential(
+        197.38 k, 5.126% Params, 2.57 MMac, 6.907% MACs, 
+        (0): Conv1d(196.86 k, 5.113% Params, 2.56 MMac, 6.889% MACs, 256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(512, 0.013% Params, 6.66 KMac, 0.018% MACs, 256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU(0, 0.000% Params, 3.33 KMac, 0.009% MACs, )
+    )
+  )
+  (layer3): Sequential(
+    2.89 M, 75.093% Params, 20.25 MMac, 54.518% MACs, 
+    (0): ResidualBlock(
+      1.32 M, 34.162% Params, 9.21 MMac, 24.804% MACs, 
+      (conv1): Sequential(
+        394.75 k, 10.253% Params, 2.77 MMac, 7.448% MACs, 
+        (0): Conv1d(393.73 k, 10.226% Params, 2.76 MMac, 7.419% MACs, 256, 512, kernel_size=(3,), stride=(2,), padding=(1,))
+        (1): BatchNorm1d(1.02 k, 0.027% Params, 7.17 KMac, 0.019% MACs, 512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(0, 0.000% Params, 3.58 KMac, 0.010% MACs, )
+      )
+      (conv2): Sequential(
+        787.97 k, 20.465% Params, 5.52 MMac, 14.848% MACs, 
+        (0): Conv1d(786.94 k, 20.439% Params, 5.51 MMac, 14.828% MACs, 512, 512, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(1.02 k, 0.027% Params, 7.17 KMac, 0.019% MACs, 512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        132.61 k, 3.444% Params, 928.26 KMac, 2.499% MACs, 
+        (0): Conv1d(131.58 k, 3.418% Params, 921.09 KMac, 2.479% MACs, 256, 512, kernel_size=(1,), stride=(2,))
+        (1): BatchNorm1d(1.02 k, 0.027% Params, 7.17 KMac, 0.019% MACs, 512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU(0, 0.000% Params, 3.58 KMac, 0.010% MACs, )
+    )
+    (1): ResidualBlock(
+      1.58 M, 40.931% Params, 11.04 MMac, 29.714% MACs, 
+      (conv1): Sequential(
+        787.97 k, 20.465% Params, 5.52 MMac, 14.857% MACs, 
+        (0): Conv1d(786.94 k, 20.439% Params, 5.51 MMac, 14.828% MACs, 512, 512, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(1.02 k, 0.027% Params, 7.17 KMac, 0.019% MACs, 512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(0, 0.000% Params, 3.58 KMac, 0.010% MACs, )
+      )
+      (conv2): Sequential(
+        787.97 k, 20.465% Params, 5.52 MMac, 14.848% MACs, 
+        (0): Conv1d(786.94 k, 20.439% Params, 5.51 MMac, 14.828% MACs, 512, 512, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(1.02 k, 0.027% Params, 7.17 KMac, 0.019% MACs, 512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU(0, 0.000% Params, 3.58 KMac, 0.010% MACs, )
+    )
+  )
+  (avgpool): AvgPool1d(0, 0.000% Params, 3.58 KMac, 0.010% MACs, kernel_size=(7,), stride=(1,), padding=(0,))
+  (fc): Linear(1.54 k, 0.040% Params, 1.54 KMac, 0.004% MACs, in_features=512, out_features=3, bias=True)
+)
+Computational complexity:       37.15 MMac
+Number of parameters:           3.85 M  

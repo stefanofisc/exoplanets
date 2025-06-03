@@ -1,0 +1,15 @@
+Loading tensors...
+
+Tensors loaded successfully
+
+Showing samples distribution of the entire dataset
+Classe '0.0': 9595 elementi
+Classe '2.0': 2541 elementi
+Classe '1.0': 7200 elementi
+
+Showing train-test tensors shape:
+X_train: torch.Size([15468, 201]), y_train: torch.Size([15468])
+X_test:  torch.Size([3868, 201]), y_test:  torch.Size([3868])
+
+Dataset class: ending...
+Dataset class: resources deallocated from memory.
