@@ -1,6 +1,7 @@
 import yaml
 import torch
 import pandas as pd
+from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from collections import Counter
@@ -220,6 +221,15 @@ class Dataset:
     def get_training_test_samples(self):
       return self.__X_train, self.__y_train, self.__X_test, self.__y_test
     
+    def get_training_data_loader(self, batch_size):
+      """
+        Crea un dataset combinando input e label. Metodo utilizzato dalla classe Model durante il training, per iterare sui campioni.
+        Output:
+          - DataLoader per iterare in batch di size a tua scelta.
+      """
+      train_dataset = TensorDataset(self.__X_train, self.__y_train)
+      return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
+
     def __del__(self):
       print('\nDestructor called for the class Dataset.')
 

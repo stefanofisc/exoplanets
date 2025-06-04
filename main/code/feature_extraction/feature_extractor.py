@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 import torchmetrics
 import numpy as np
 import gc
@@ -9,8 +10,9 @@ import sys
 from pandas import read_csv
 from resnet.resnet_class import PathConfigResnet, ResidualBlock, ResNet, InputVariablesResnet
 from vgg.vgg_class import PathConfigVGG19, VGG19, InputVariablesVGG19
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score, precision_recall_curve, roc_curve
+from typing import List
 
 sys.path.insert(0, '/home/stefanofiscale/Desktop/exoplanets/main/code/dataset/')
 from dataset import PathConfigDataset, Dataset
@@ -31,6 +33,39 @@ class ModelInspector:
     for name, param in self.__model.named_parameters():
       print(f"{name:<30} {param.numel():<20}")
 
+@dataclass
+class TrainingMetrics:
+    epochs: List[int] = field(default_factory=list)
+    loss: List[float] = field(default_factory=list)
+    precision: List[float] = field(default_factory=list)
+    recall: List[float] = field(default_factory=list)
+    f1: List[float] = field(default_factory=list)
+    auc_roc: List[float] = field(default_factory=list)
+
+    def log(self, epoch, loss, precision, recall, f1, auc):
+        """Aggiunge i valori di una singola epoca"""
+        self.epochs.append(epoch)
+        self.loss.append(loss)
+        self.precision.append(precision)
+        self.recall.append(recall)
+        self.f1.append(f1)
+        self.auc_roc.append(auc)
+
+    def print_last(self):
+        """Stampa i valori dell’ultima epoca"""
+        print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
+
+    def plot_metrics(self):
+        metrics = ['loss', 'precision', 'recall', 'f1', 'auc_roc']
+        for metric in metrics:
+            plt.plot(self.epochs, getattr(self, metric), label=metric)
+
+        plt.xlabel('Epoch')
+        plt.legend()
+        plt.title('Training metrics')
+        plt.grid(True)
+        plt.tight_layout()
+        #plt.savefig(#TODO. Path to be defined)
 
 # 2025-05-31. Questa classe va rivista per bene in funzione del refactoring.
 class MetricTracker:
@@ -384,10 +419,9 @@ class MetricTracker:
 
 
 @dataclass
-class InputVariablesModel:
+class InputVariablesModelTraining:
     # define type of input data
     _model_name: str
-    #NOTE. Experimental.
     _optimizer: str
     _learning_rate: float
     _num_epochs: int
@@ -408,51 +442,121 @@ class InputVariablesModel:
             _num_epochs=config['num_epochs'],
             _batch_size=config['batch_size'],
             _num_classes=config['num_classes'],
-            _weight_decay=config['weight_decay'],
-            _momentum=config['momentum'],
+            _weight_decay=config.get('weight_decay', None),   # necessario solo se optimizer = SGD
+            _momentum=config.get('momentum', None),           # necessario solo se optimizer = SGD
             )
     
     # define get and set methods
     pass
 
 class Model:
-    def __init__(self, dataset, model, model_hyperparameters_object):
+    def __init__(self, dataset, model, model_hyperparameters_object, training_hyperparameters_object):
         """
             Costruttore della classe Model. 
             Input:
                 - dataset: dataset di input. Oggetto della classe Dataset
                 - model: modello di input. Può essere un oggetto della classe Resnet o VGG;
-                - model_hyperparameters_object: iperparametri del modello;
+                - model_hyperparameters_object: iperparametri per definire l'architettura del modello;
+                - training_hyperparameters_object: iperparametri di training;
         """
         # Init model architecture
         self.__model = model
         self.__model.to(device)
         self.__model_hyperparameters = model_hyperparameters_object
+        self.__training_hyperparameters = training_hyperparameters_object
+        self.__training_metrics = TrainingMetrics()
         # Init dataset and training-test tensors
         self.__dataset = dataset
-        self.__X_train, self.__y_train, self.__X_test, self.__y_test = self.__dataset.get_training_test_samples()
+        #NOTE. Commento dati train e test perché per ora non mi servono singolarmente.
+        #self.__X_train, self.__y_train, self.__X_test, self.__y_test = self.__dataset.get_training_test_samples()
+        self.__training_data_loader = self.__dataset.get_training_data_loader(batch_size = self.__training_hyperparameters._batch_size)
         # Init MetricTracker object to keep track of training-test metrics
         self.__metric_tracker = MetricTracker(device, self.__model_hyperparameters._fc_output_size)
         # Init loss function
-        self.__criterion = self.__init_loss(self.__model_hyperparameters._fc_output_size)
-        
-        #TODO. Algoritmo di ottimizzazione, da valutare sua inizializzazione
-        #           self.__optimizer = optim.Adam(self.__model.parameters(), lr=self.__model_hyperparameters._learning_rate)
-        #TODO. Metodi di training e test
-    
-    def __init_loss(self, fc_output_size):
-        if fc_output_size == 1:
-          print('\nTask: binary classification')
-          return nn.BCEWithLogitsLoss()
-        else:
-          print('\nTask: multi-class classification')
-          return nn.CrossEntropyLoss()
+        self.__criterion = self.__init_loss()
+        # Init optimizer
+        self.__optimizer = self.__init_optimizer()
 
-    def train_vgg(self):
-        pass
-        
-    def train_resnet(self):
-        pass
+    
+    def __init_loss(self):
+        """
+          Method for loss function initialization. Select one between Binary Cross-Entropy and Cross-Entropy depending on
+          the classification task at hand.
+        """
+        if self.__model_hyperparameters._fc_output_size == 1:
+          return nn.BCEWithLogitsLoss(pos_weight = self.__init_class_weighting())
+        else:
+          return nn.CrossEntropyLoss(weight = self.__init_class_weighting())
+
+    def __init_class_weighting(self):
+        """
+          Method for class weighting initialization. Use the Inverse Class Frequency (ICF) method.
+          Output:
+            - class_weights: for multi-class classification, a torch.Tensor containing the weights computed for each class
+        """
+        if self.__model_hyperparameters._fc_output_size == 1:
+          num_pos = self.__y_train.sum()                                # Number of positive samples (class 1: planet)
+          num_neg = len(self.__y_train) - num_pos                       #           negative         (class 0: not-planet)
+          pos_weight = (num_neg / num_pos).clone().detach().to(device)  # Weight applied to the loss function (ICF)
+          return pos_weight
+        else:
+          class_counts = torch.bincount(self.__y_train, minlength=self.__training_hyperparameters._num_classes) # Compute class frequency
+          class_weights = len(self.__y_train) / (self.__training_hyperparameters._num_classes * class_counts)   # ICF method
+          class_weights = class_weights.float() # Convert into tensor format
+          return class_weights
+
+    def __init_optimizer(self):
+        if self.__training_hyperparameters._optimizer == 'adam':
+          print('\nOptimizer: Adam')
+          return optim.Adam(self.__model.parameters(), lr=self.__training_hyperparameters._learning_rate)
+        elif self.__training_hyperparameters._optimizer == 'sgd':
+          print('\nOptimizer: SGD')
+          return optim.SGD(
+            self.__model.parameters(),
+            lr = self.__training_hyperparameters._learning_rate,
+            weight_decay = self.__training_hyperparameters._weight_decay,
+            momentum = self.__training_hyperparameters._momentum
+          )
+        else:
+          raise ValueError(f'Got {self.__training_hyperparameters._optimizer}, but work with Adam and Stochastic Gradient Descent optimizers only.\n Please set adam or sgd to train the model.')
+
+    def train(self):
+        for epoch in range(self.__training_hyperparameters._num_epochs):
+          self.__model.train()    # setta il modello in modalità training
+ 
+          for batch_x, batch_y in self.__training_data_loader
+            batch_x, batch_y = batch_x.to(device), batch_y.to(device) # iterate on batch. before computation, put it on the same device where the model is
+            
+            self.__optimizer.zero_grad()                              # init gradients
+            if self.__training_hyperparameters._num_classes > 1:
+              batch_y = batch_y.long()                                # torch.nn.CrossEntropyLoss() requires y_true to be torch.long
+            
+            # Feed-forward pass
+            features = self.__model.get_feature_extraction_output(batch_x)   #TODO. Check why u don't use batch_size as input for resnet
+            if self.__training_hyperparameters._model_name == 'resnet':
+              #TODO. Fare in modo che resnet e vgg abbiano stesso metodo feed-forward per ottenere output
+              outputs = self.__model()
+            elif self.__training_hyperparameters._model_name == 'vgg':
+              outputs = self.__model.get_classification_output(features)
+            else:
+              raise ValueError(f'Got {self.__training_hyperparameters._model_name}. Work with vgg and resnet only.')
+            
+            # Update loss
+            if self.__training_hyperparameters._num_classes > 1:
+              loss = self.__criterion(outputs, batch_y.squeeze())     # remove any additional dimension from labels
+            else:
+              loss = self.__criterion(outputs, batch_y.unsqueeze(1).float())
+            
+            # Backpropagation
+            loss.backward()
+            self.__optimizer.step()
+            # Update the loss function and the other metrics
+            # TODO. Codice training non ancora terminato
+
+
+
+
+          
         
     def evaluate(self):
         pass
@@ -470,7 +574,9 @@ class FeatureExtractor:
       self.__dataset_handler = self.__init_dataset()
       self.__model_hyperparameters_object = None
       self.__model = None
+      self.__training_hyperparameters_object = None
       self.__init_model()
+      self.__init_training_hyperparameters()
     
     def __init_dataset(self):
       # 1. Initialize Dataset object with config_dataset.yaml
@@ -489,7 +595,7 @@ class FeatureExtractor:
       if config_fe['model_name'] == 'vgg':
           # load data from config_vgg.yaml
           self.__model_hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(PathConfigVGG19.VGG / 'config_vgg.yaml')
-              
+          
           # Create the model architecture
           self.__model = VGG19(
               self.__model_hyperparameters_object.get_psz(),
@@ -510,12 +616,20 @@ class FeatureExtractor:
             self.__model_hyperparameters_object.get_fc_output_size()
             ).to(device)
           print(self.__model)
+    
+    def __init_training_hyperparameters(self):
+        self.__training_hyperparameters_object = InputVariablesModelTraining.get_input_hyperparameters('config_feature_extractor.yaml')
 
     def __feature_extraction(self):
       # Initialize Model object
-      model = Model(self.__dataset_handler, self.__model, self.__model_hyperparameters_object)
+      model = Model(
+        self.__dataset_handler, 
+        self.__model, 
+        self.__model_hyperparameters_object, 
+        self.__training_hyperparameters_object
+        )
       # Train the model
-
+      model.train()
 
     def main(self):
       self.__feature_extraction()
