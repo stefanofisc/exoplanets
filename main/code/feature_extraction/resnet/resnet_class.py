@@ -171,7 +171,18 @@ class ResNet(nn.Module):
             print('{:<30}  {:<8}'.format('Number of parameters: ', params))
 
     def get_feature_extraction_output(self):
-      return self.__feature_vector
+        """
+            Restituisce il vettore di caratteristiche estratto durante l'ultimo forward pass.
+
+            A differenza del suo analogo in <class.VGG19>, questo metodo non richiede un parametro di input perché 
+            il vettore delle feature è già stato salvato internamente nella variabile self.__feature_vector durante
+            l'esecuzione del metodo forward(x). È quindi fondamentale chiamare prima il modello su un batch di 
+            input (es. model(x)) prima di richiedere l'output del blocco di feature extraction. In caso contrario, 
+            la variabile potrebbe non essere inizializzata.
+        """
+        if self.__feature_vector is None:
+            raise ValueError("Feature vector not initialized. Call model(input) before accessing feature vector.")
+        return self.__feature_vector
 
 
 def main_resnet():

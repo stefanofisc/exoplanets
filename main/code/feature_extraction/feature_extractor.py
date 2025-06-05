@@ -179,6 +179,7 @@ class Model:
         else:
           raise ValueError(f'Got {self.__training_hyperparameters._optimizer}, but work with Adam and Stochastic Gradient Descent optimizers only.\n Please set adam or sgd to train the model.')
 
+
     def train(self):
         for epoch in range(self.__training_hyperparameters._num_epochs):
           self.__model.train()    # setta il modello in modalità training
@@ -203,12 +204,14 @@ class Model:
             
             # Feed-forward pass
             if self.__training_hyperparameters._model_name == 'resnet':
-              #TODO. Inconsistenza nome metodo. Fare in modo che resnet e vgg abbiano stesso metodo feed-forward per ottenere output
-              features = self.__model.get_feature_extraction_output() 
+              # The order is swapped wrt VGG19 as Resnet class contains both feature extraction and classification in it
               outputs = self.__model(batch_x)
+              features = self.__model.get_feature_extraction_output() 
+
             elif self.__training_hyperparameters._model_name == 'vgg':
-              features = self.__model.get_feature_extraction_output(batch_x)   #TODO. Check why u don't use batch_size as input for resnet
+              features = self.__model.get_feature_extraction_output(batch_x)
               outputs = self.__model.get_classification_output(features)
+
             else:
               raise ValueError(f'Got {self.__training_hyperparameters._model_name}, but work with vgg and resnet only.')
             
