@@ -230,6 +230,12 @@ class Dataset:
       train_dataset = TensorDataset(self.__X_train, self.__y_train)
       return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
 
+    def get_training_set_length(self):
+      return len(self.__X_train)
+    
+    def get_training_set_labels(self):
+      return self.__y_train
+
     def __del__(self):
       print('\nDestructor called for the class Dataset.')
 
