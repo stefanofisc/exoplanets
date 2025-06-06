@@ -74,11 +74,10 @@ class TrainingMetrics:
         """Stampa i valori dell’ultima epoca"""
         print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
 
-
-    def plot_metrics(self, output_path: str, model_name: str, optimizer: str, num_epochs: int):
+    def plot_metrics(self, output_path: str, model_name: str, optimizer: str, num_epochs: int, df_name : str):
         """
           Salva i plot delle metriche con un nome file coerente con lo stile:
-          YYYY-MM-DD_<model_name>_<optimizer>_<num_epochs>_<metric>.png
+          YYYY-MM-DD_<model_name>_<optimizer>_<num_epochs>_<df_name>_<metric>.png
 
           In questo modo, rendo il formato del filename di output coerente con quello
           relativo alle caratteristiche estratte, salvate in features_step1_cnn.
@@ -95,7 +94,7 @@ class TrainingMetrics:
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
-            filename = f"{today}_{model_name}_{optimizer}_{num_epochs}_{metric}.png"
+            filename = f"{today}_{model_name}_{optimizer}_{num_epochs}_{df_name}_{metric}.png"
             plt.savefig(os.path.join(output_path, filename), dpi=300)
             plt.close()
 
@@ -204,12 +203,12 @@ class Model:
 
     def __feed_forward_pass(self, batch_x):
         # Feed-forward pass
-        if self.__training_hyperparameters._model_name == 'resnet':
+        if 'resnet' in self.__training_hyperparameters._model_name:
           # The order is swapped wrt VGG19 as Resnet class contains both feature extraction and classification in it
           outputs = self.__model(batch_x)
           features = self.__model.get_feature_extraction_output() 
 
-        elif self.__training_hyperparameters._model_name == 'vgg':
+        elif 'vgg' in self.__training_hyperparameters._model_name:
           features = self.__model.get_feature_extraction_output(batch_x)
           outputs = self.__model.get_classification_output(features)
 
@@ -228,11 +227,11 @@ class Model:
 
           I file vengono salvati nella directory definita da PathConfigFeatureExtractor.FEATURES_STEP1_CNN.
         """
-        # filepath structure: features_step1_cnn/YYYY-MM-DD_<model_name>_<optimizer>_<num_epochs>_<features/labels>.npy
+        # filepath structure: features_step1_cnn/<YYYY-MM-DD>_<model_name>_<optimizer>_<num_epochs>_<catalog_name>_<features/labels>.npy
         today = get_today_string()
         filepath_base = (
           PathConfigFeatureExtractor.FEATURES_STEP1_CNN / 
-          f'{today}_{self.__training_hyperparameters._model_name}_{self.__training_hyperparameters._optimizer}_{str(self.__training_hyperparameters._num_epochs)}_'
+          f'{today}_{self.__training_hyperparameters._model_name}_{self.__training_hyperparameters._optimizer}_{self.__training_hyperparameters._num_epochs}_{self.__dataset.get_catalog_name()}_'
         )
         all_features = np.concatenate(self.__extracted_features, axis=0)
         all_labels = np.concatenate(self.__extracted_labels, axis=0)
@@ -310,7 +309,8 @@ class Model:
           output_path=PathConfigFeatureExtractor.OUTPUT_FILES / self.__training_hyperparameters._metrics_output_path,
           model_name=self.__training_hyperparameters._model_name,
           optimizer=self.__training_hyperparameters._optimizer,
-          num_epochs=self.__training_hyperparameters._num_epochs
+          num_epochs=self.__training_hyperparameters._num_epochs,
+          df_name=self.__dataset.get_catalog_name()
           )
         
         # Concatenate and save feature vectors and labels

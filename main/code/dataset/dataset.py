@@ -235,6 +235,9 @@ class Dataset:
     
     def get_training_set_labels(self):
       return self.__y_train
+    
+    def get_catalog_name(self):
+      return self._config['catalog_name']
 
     def __del__(self):
       print('\nDestructor called for the class Dataset.')
