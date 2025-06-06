@@ -1,0 +1,332 @@
+Executing training on cuda
+Loading tensors...
+
+Tensors loaded successfully
+ResNet(
+  (conv1): Sequential(
+    (0): Conv1d(1, 64, kernel_size=(7,), stride=(2,), padding=(3,))
+    (1): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (2): ReLU()
+  )
+  (maxpool): MaxPool1d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+  (layer0): Sequential(
+    (0): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (1): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (2): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(64, 64, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+  )
+  (layer1): Sequential(
+    (0): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(64, 128, kernel_size=(3,), stride=(2,), padding=(1,))
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv1d(64, 128, kernel_size=(1,), stride=(2,))
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (1): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (2): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (3): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(128, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+  )
+  (layer2): Sequential(
+    (0): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(128, 256, kernel_size=(3,), stride=(2,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv1d(128, 256, kernel_size=(1,), stride=(2,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (1): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (2): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (3): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (4): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (5): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+  )
+  (layer3): Sequential(
+    (0): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(256, 512, kernel_size=(3,), stride=(2,), padding=(1,))
+        (1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(512, 512, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv1d(256, 512, kernel_size=(1,), stride=(2,))
+        (1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (1): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(512, 512, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(512, 512, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+    (2): ResidualBlock(
+      (conv1): Sequential(
+        (0): Conv1d(512, 512, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+      )
+      (conv2): Sequential(
+        (0): Conv1d(512, 512, kernel_size=(3,), stride=(1,), padding=(1,))
+        (1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu): ReLU()
+    )
+  )
+  (avgpool): AvgPool1d(kernel_size=(7,), stride=(1,), padding=(0,))
+  (fc): Linear(in_features=512, out_features=3, bias=True)
+)
+
+Optimizer: SGD
+Epoch 0 — Loss: 0.9634, Precision: 0.530, Recall: 0.563, F1: 0.524, AUC: 0.736
+Epoch 1 — Loss: 0.7872, Precision: 0.621, Recall: 0.667, F1: 0.633, AUC: 0.825
+Epoch 2 — Loss: 0.7342, Precision: 0.645, Recall: 0.690, F1: 0.659, AUC: 0.847
+Epoch 3 — Loss: 0.6876, Precision: 0.666, Recall: 0.714, F1: 0.683, AUC: 0.866
+Epoch 4 — Loss: 0.6552, Precision: 0.682, Recall: 0.729, F1: 0.699, AUC: 0.879
+Epoch 5 — Loss: 0.6298, Precision: 0.693, Recall: 0.740, F1: 0.711, AUC: 0.888
+Epoch 6 — Loss: 0.5971, Precision: 0.708, Recall: 0.757, F1: 0.726, AUC: 0.900
+Epoch 7 — Loss: 0.5657, Precision: 0.718, Recall: 0.767, F1: 0.737, AUC: 0.910
+Epoch 8 — Loss: 0.5301, Precision: 0.736, Recall: 0.784, F1: 0.755, AUC: 0.922
+Epoch 9 — Loss: 0.4976, Precision: 0.748, Recall: 0.798, F1: 0.768, AUC: 0.931
+Epoch 10 — Loss: 0.4712, Precision: 0.762, Recall: 0.810, F1: 0.782, AUC: 0.939
+Epoch 11 — Loss: 0.4363, Precision: 0.777, Recall: 0.827, F1: 0.798, AUC: 0.947
+Epoch 12 — Loss: 0.4154, Precision: 0.786, Recall: 0.834, F1: 0.806, AUC: 0.952
+Epoch 13 — Loss: 0.3657, Precision: 0.810, Recall: 0.855, F1: 0.830, AUC: 0.963
+Epoch 14 — Loss: 0.3556, Precision: 0.814, Recall: 0.859, F1: 0.833, AUC: 0.965
+Epoch 15 — Loss: 0.3421, Precision: 0.821, Recall: 0.866, F1: 0.841, AUC: 0.968
+Epoch 16 — Loss: 0.3045, Precision: 0.839, Recall: 0.882, F1: 0.858, AUC: 0.975
+Epoch 17 — Loss: 0.2948, Precision: 0.840, Recall: 0.884, F1: 0.859, AUC: 0.976
+Epoch 18 — Loss: 0.2714, Precision: 0.857, Recall: 0.896, F1: 0.875, AUC: 0.980
+Epoch 19 — Loss: 0.2425, Precision: 0.865, Recall: 0.907, F1: 0.884, AUC: 0.984
+Epoch 20 — Loss: 0.2326, Precision: 0.872, Recall: 0.909, F1: 0.889, AUC: 0.985
+Epoch 21 — Loss: 0.2438, Precision: 0.866, Recall: 0.906, F1: 0.884, AUC: 0.984
+Epoch 22 — Loss: 0.2318, Precision: 0.868, Recall: 0.909, F1: 0.886, AUC: 0.985
+Epoch 23 — Loss: 0.2171, Precision: 0.879, Recall: 0.916, F1: 0.896, AUC: 0.987
+Epoch 24 — Loss: 0.1865, Precision: 0.892, Recall: 0.929, F1: 0.909, AUC: 0.990
+Epoch 25 — Loss: 0.1596, Precision: 0.909, Recall: 0.938, F1: 0.923, AUC: 0.993
+Epoch 26 — Loss: 0.1350, Precision: 0.924, Recall: 0.950, F1: 0.936, AUC: 0.995
+Epoch 27 — Loss: 0.1329, Precision: 0.920, Recall: 0.948, F1: 0.933, AUC: 0.995
+Epoch 28 — Loss: 0.1306, Precision: 0.924, Recall: 0.950, F1: 0.936, AUC: 0.995
+Epoch 29 — Loss: 0.1498, Precision: 0.914, Recall: 0.943, F1: 0.928, AUC: 0.994
+Epoch 30 — Loss: 0.1487, Precision: 0.911, Recall: 0.943, F1: 0.926, AUC: 0.994
+Epoch 31 — Loss: 0.1219, Precision: 0.927, Recall: 0.954, F1: 0.939, AUC: 0.996
+Epoch 32 — Loss: 0.1327, Precision: 0.920, Recall: 0.949, F1: 0.934, AUC: 0.995
+Epoch 33 — Loss: 0.1419, Precision: 0.914, Recall: 0.945, F1: 0.929, AUC: 0.994
+Epoch 34 — Loss: 0.0967, Precision: 0.945, Recall: 0.966, F1: 0.955, AUC: 0.997
+Epoch 35 — Loss: 0.0825, Precision: 0.950, Recall: 0.970, F1: 0.960, AUC: 0.998
+Epoch 36 — Loss: 0.0782, Precision: 0.953, Recall: 0.972, F1: 0.962, AUC: 0.998
+Epoch 37 — Loss: 0.0644, Precision: 0.961, Recall: 0.977, F1: 0.969, AUC: 0.999
+Epoch 38 — Loss: 0.0642, Precision: 0.962, Recall: 0.977, F1: 0.969, AUC: 0.999
+Epoch 39 — Loss: 0.0642, Precision: 0.961, Recall: 0.977, F1: 0.968, AUC: 0.999
+Epoch 40 — Loss: 0.0503, Precision: 0.968, Recall: 0.982, F1: 0.975, AUC: 0.999
+Epoch 41 — Loss: 0.0414, Precision: 0.976, Recall: 0.986, F1: 0.981, AUC: 0.999
+Epoch 42 — Loss: 0.0412, Precision: 0.977, Recall: 0.986, F1: 0.982, AUC: 0.999
+Epoch 43 — Loss: 0.0429, Precision: 0.976, Recall: 0.986, F1: 0.981, AUC: 0.999
+Epoch 44 — Loss: 0.0341, Precision: 0.979, Recall: 0.988, F1: 0.984, AUC: 1.000
+Epoch 45 — Loss: 0.0545, Precision: 0.967, Recall: 0.980, F1: 0.973, AUC: 0.999
+Epoch 46 — Loss: 0.0497, Precision: 0.968, Recall: 0.983, F1: 0.975, AUC: 0.999
+Epoch 47 — Loss: 0.0710, Precision: 0.955, Recall: 0.974, F1: 0.964, AUC: 0.998
+Epoch 48 — Loss: 0.0895, Precision: 0.946, Recall: 0.967, F1: 0.956, AUC: 0.998
+Epoch 49 — Loss: 0.1042, Precision: 0.936, Recall: 0.963, F1: 0.948, AUC: 0.997
+Epoch 50 — Loss: 0.0710, Precision: 0.957, Recall: 0.975, F1: 0.966, AUC: 0.998
+Epoch 51 — Loss: 0.0565, Precision: 0.965, Recall: 0.979, F1: 0.972, AUC: 0.999
+Epoch 52 — Loss: 0.0322, Precision: 0.979, Recall: 0.989, F1: 0.984, AUC: 1.000
+Epoch 53 — Loss: 0.0211, Precision: 0.988, Recall: 0.993, F1: 0.991, AUC: 1.000
+Epoch 54 — Loss: 0.0141, Precision: 0.992, Recall: 0.996, F1: 0.994, AUC: 1.000
+Epoch 55 — Loss: 0.0078, Precision: 0.996, Recall: 0.998, F1: 0.997, AUC: 1.000
+Epoch 56 — Loss: 0.0162, Precision: 0.992, Recall: 0.995, F1: 0.993, AUC: 1.000
+Epoch 57 — Loss: 0.0090, Precision: 0.996, Recall: 0.997, F1: 0.997, AUC: 1.000
+Epoch 58 — Loss: 0.0070, Precision: 0.997, Recall: 0.998, F1: 0.997, AUC: 1.000
+Epoch 59 — Loss: 0.0065, Precision: 0.997, Recall: 0.998, F1: 0.997, AUC: 1.000
+Epoch 60 — Loss: 0.0047, Precision: 0.998, Recall: 0.999, F1: 0.998, AUC: 1.000
+Epoch 61 — Loss: 0.0039, Precision: 0.998, Recall: 0.999, F1: 0.999, AUC: 1.000
+Epoch 62 — Loss: 0.0024, Precision: 0.999, Recall: 1.000, F1: 0.999, AUC: 1.000
+Epoch 63 — Loss: 0.0015, Precision: 0.999, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 64 — Loss: 0.0016, Precision: 0.999, Recall: 1.000, F1: 0.999, AUC: 1.000
+Epoch 65 — Loss: 0.0015, Precision: 0.999, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 66 — Loss: 0.0015, Precision: 0.999, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 67 — Loss: 0.0013, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 68 — Loss: 0.0017, Precision: 0.999, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 69 — Loss: 0.0024, Precision: 0.999, Recall: 0.999, F1: 0.999, AUC: 1.000
+Epoch 70 — Loss: 0.0020, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 71 — Loss: 0.0013, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 72 — Loss: 0.0034, Precision: 0.998, Recall: 0.999, F1: 0.999, AUC: 1.000
+Epoch 73 — Loss: 0.0035, Precision: 0.998, Recall: 0.999, F1: 0.998, AUC: 1.000
+Epoch 74 — Loss: 0.0096, Precision: 0.995, Recall: 0.997, F1: 0.996, AUC: 1.000
+Epoch 75 — Loss: 0.0126, Precision: 0.993, Recall: 0.995, F1: 0.994, AUC: 1.000
+Epoch 76 — Loss: 0.0078, Precision: 0.996, Recall: 0.998, F1: 0.997, AUC: 1.000
+Epoch 77 — Loss: 0.0027, Precision: 0.999, Recall: 0.999, F1: 0.999, AUC: 1.000
+Epoch 78 — Loss: 0.0015, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 79 — Loss: 0.0008, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 80 — Loss: 0.0008, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 81 — Loss: 0.0010, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 82 — Loss: 0.0006, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 83 — Loss: 0.0006, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 84 — Loss: 0.0004, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 85 — Loss: 0.0004, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 86 — Loss: 0.0004, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 87 — Loss: 0.0022, Precision: 0.999, Recall: 0.999, F1: 0.999, AUC: 1.000
+Epoch 88 — Loss: 0.0010, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 89 — Loss: 0.0009, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 90 — Loss: 0.0010, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 91 — Loss: 0.0010, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 92 — Loss: 0.0004, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 93 — Loss: 0.0005, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 94 — Loss: 0.0003, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 95 — Loss: 0.0003, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 96 — Loss: 0.0010, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+Epoch 97 — Loss: 0.0016, Precision: 0.999, Recall: 0.999, F1: 0.999, AUC: 1.000
+Epoch 98 — Loss: 0.0011, Precision: 0.999, Recall: 1.000, F1: 0.999, AUC: 1.000
+Epoch 99 — Loss: 0.0005, Precision: 1.000, Recall: 1.000, F1: 1.000, AUC: 1.000
+
+Training completed.
+
+Destructor called for the class Model

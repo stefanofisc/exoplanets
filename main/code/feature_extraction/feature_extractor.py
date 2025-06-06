@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 from typing import List
 from pathlib import Path
+from datetime import datetime
 
 sys.path.insert(0, '/home/stefanofiscale/Desktop/exoplanets/main/code/dataset/')
 from dataset import PathConfigDataset, Dataset
@@ -27,6 +28,7 @@ class PathConfigFeatureExtractor:
     # Collection of input variables shared among the modules
     BASE         = Path('/home/stefanofiscale/Desktop/exoplanets/main/')
     OUTPUT_FILES = BASE / 'output_files'
+    FEATURES_STEP1_CNN = BASE / 'data' / 'features_step1_cnn'
 
 class ModelInspector:
   def __init__(self, model):
@@ -136,6 +138,9 @@ class Model:
         self.__criterion = self.__init_loss()
         # Init optimizer
         self.__optimizer = self.__init_optimizer()
+        # Output: feature vectors
+        self.__extracted_features = []
+        self.__extracted_labels = []
 
     def __init_loss(self):
         """
@@ -179,6 +184,44 @@ class Model:
         else:
           raise ValueError(f'Got {self.__training_hyperparameters._optimizer}, but work with Adam and Stochastic Gradient Descent optimizers only.\n Please set adam or sgd to train the model.')
 
+    def __feed_forward_pass(self, batch_x):
+        # Feed-forward pass
+        if self.__training_hyperparameters._model_name == 'resnet':
+          # The order is swapped wrt VGG19 as Resnet class contains both feature extraction and classification in it
+          outputs = self.__model(batch_x)
+          features = self.__model.get_feature_extraction_output() 
+
+        elif self.__training_hyperparameters._model_name == 'vgg':
+          features = self.__model.get_feature_extraction_output(batch_x)
+          outputs = self.__model.get_classification_output(features)
+
+        else:
+          raise ValueError(f'Got {self.__training_hyperparameters._model_name}, but work with vgg and resnet only.')
+        
+        return features, outputs
+
+    def __save_extracted_feature_vectors(self):
+        """
+          Salva i vettori di caratteristiche, con i relativi labels, estratti durante l'ultima epoca di training.
+          I dati vengono salvati in due file .npy separati, uno per le features e uno per i labels.
+          
+          Il percorso del file è costruito dinamicamente in base alla data corrente (formato YYYY-MM-DD),
+          al nome del modello, all'ottimizzatore utilizzato e al numero di epoche di training.
+
+          I file vengono salvati nella directory definita da PathConfigFeatureExtractor.FEATURES_STEP1_CNN.
+        """
+        # filepath structure: features_step1_cnn/YYYY-MM-DD_<model_name>_<optimizer>_<num_epochs>_<features/labels>.npy
+        today = datetime.today().strftime('%Y-%m-%d')
+        filepath_base = (
+          PathConfigFeatureExtractor.FEATURES_STEP1_CNN / 
+          f'{today}_{self.__training_hyperparameters._model_name}_{self.__training_hyperparameters._optimizer}_{str(self.__training_hyperparameters._num_epochs)}_'
+        )
+        all_features = np.concatenate(self.__extracted_features, axis=0)
+        all_labels = np.concatenate(self.__extracted_labels, axis=0)
+
+        np.save(filepath_base.with_name(filepath_base.name + 'features.npy'), all_features)
+        np.save(filepath_base.with_name(filepath_base.name + 'labels.npy'), all_labels)
+        print(f'Features and labels saved to {filepath_base}features.npy and {filepath_base}labels.npy')      
 
     def train(self):
         for epoch in range(self.__training_hyperparameters._num_epochs):
@@ -203,23 +246,13 @@ class Model:
               batch_y = batch_y.long()                                # torch.nn.CrossEntropyLoss() requires y_true to be torch.long
             
             # Feed-forward pass
-            if self.__training_hyperparameters._model_name == 'resnet':
-              # The order is swapped wrt VGG19 as Resnet class contains both feature extraction and classification in it
-              outputs = self.__model(batch_x)
-              features = self.__model.get_feature_extraction_output() 
-
-            elif self.__training_hyperparameters._model_name == 'vgg':
-              features = self.__model.get_feature_extraction_output(batch_x)
-              outputs = self.__model.get_classification_output(features)
-
-            else:
-              raise ValueError(f'Got {self.__training_hyperparameters._model_name}, but work with vgg and resnet only.')
+            features, outputs = self.__feed_forward_pass(batch_x)
             
             # Update loss
             if self.__training_hyperparameters._num_classes > 1:
               loss = self.__criterion(outputs, batch_y.squeeze())     # remove any additional dimension from labels
               probs = F.softmax(outputs, dim=1)                       # probabilities provided for each sample. required by auc_roc in multi-class scenarios
-              predictions = torch.argmax(probs, dim=1)              # discrete predictions provided for each sample: {0, 1, 2}
+              predictions = torch.argmax(probs, dim=1)                # discrete predictions provided for each sample: {0, 1, 2}
             else:
               loss = self.__criterion(outputs, batch_y.unsqueeze(1).float())
               predictions = (torch.sigmoid(outputs) > 0.5).int().squeeze()
@@ -247,11 +280,19 @@ class Model:
           # Log metrics
           self.__training_metrics.log(epoch, epoch_loss, precision, recall, f1, auc)
           self.__training_metrics.print_last()
+
+          # Save feature vectors during last epoch
+          if epoch == self.__training_hyperparameters._num_epochs - 1:
+            self.__extracted_features.append(features.detach().cpu().numpy())
+            self.__extracted_labels.append(batch_y.detach().cpu().numpy())
+        
         # Plot training metrics once training is completed. Use methods from the class TrainingMetrics
         print("\nTraining completed.")
         self.__training_metrics.plot_metrics(PathConfigFeatureExtractor.OUTPUT_FILES / self.__training_hyperparameters._metrics_output_path)
-
         
+        # Concatenate and save feature vectors and labels
+        self.__save_extracted_feature_vectors()
+
     def evaluate(self):
         pass
         

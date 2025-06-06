@@ -1,0 +1,45 @@
+Executing training on cuda
+Loading tensors...
+
+Tensors loaded successfully
+Initializing models weights with kaiming_uniform()
+VGG19(
+  (_VGG19__feature_extraction_vgg19): FeatureExtractionVGG19(
+    (_FeatureExtractionVGG19__conv_blocks): ModuleList(
+      (0): Conv1d(1, 64, kernel_size=(3,), stride=(1,), padding=same)
+      (1): Conv1d(64, 64, kernel_size=(3,), stride=(1,), padding=same)
+      (2): Conv1d(64, 128, kernel_size=(3,), stride=(1,), padding=same)
+      (3): Conv1d(128, 128, kernel_size=(3,), stride=(1,), padding=same)
+      (4): Conv1d(128, 256, kernel_size=(3,), stride=(1,), padding=same)
+      (5): Conv1d(256, 256, kernel_size=(3,), stride=(1,), padding=same)
+      (6): Conv1d(256, 512, kernel_size=(3,), stride=(1,), padding=same)
+      (7-13): 7 x Conv1d(512, 512, kernel_size=(3,), stride=(1,), padding=same)
+    )
+    (_FeatureExtractionVGG19__flatten): Flatten(start_dim=1, end_dim=-1)
+  )
+  (_VGG19__classification_vgg19): ClassificationVGG19(
+    (_ClassificationVGG19__fc_blocks): ModuleList(
+      (0): FullyConnectedVGG19(
+        (_FullyConnectedVGG19__fc_layer): Linear(in_features=2560, out_features=2560, bias=True)
+        (_FullyConnectedVGG19__output_layer): Linear(in_features=2560, out_features=3, bias=True)
+      )
+    )
+  )
+)
+
+Optimizer: Adam
+Epoch 0 — Loss: 1.1776, Precision: 0.524, Recall: 0.550, F1: 0.524, AUC: 0.730
+Epoch 1 — Loss: 0.8174, Precision: 0.600, Recall: 0.632, F1: 0.610, AUC: 0.796
+Epoch 2 — Loss: 0.7823, Precision: 0.623, Recall: 0.656, F1: 0.635, AUC: 0.817
+Epoch 3 — Loss: 0.7532, Precision: 0.639, Recall: 0.674, F1: 0.652, AUC: 0.832
+Epoch 4 — Loss: 0.7348, Precision: 0.648, Recall: 0.682, F1: 0.661, AUC: 0.840
+Epoch 5 — Loss: 0.7142, Precision: 0.659, Recall: 0.695, F1: 0.673, AUC: 0.849
+Epoch 6 — Loss: 0.7039, Precision: 0.667, Recall: 0.699, F1: 0.680, AUC: 0.854
+Epoch 7 — Loss: 0.6892, Precision: 0.675, Recall: 0.710, F1: 0.689, AUC: 0.861
+Epoch 8 — Loss: 0.6759, Precision: 0.681, Recall: 0.717, F1: 0.695, AUC: 0.866
+Feature shape per batch: torch.Size([57, 2560])
+Epoch 9 — Loss: 0.6695, Precision: 0.681, Recall: 0.717, F1: 0.696, AUC: 0.869
+
+Training completed.
+
+Destructor called for the class Model
