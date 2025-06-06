@@ -4,14 +4,23 @@
 import torch
 import torch.nn as nn
 import yaml
+import sys
 from dataclasses import dataclass
 from ptflops import get_model_complexity_info
 from pathlib import Path
 
+# Defining local paths
+CURRENT_DIR = Path(__file__).resolve().parent
+PROJECT_CODE_DIR = CURRENT_DIR.parent.parent
+UTILS_PATH = PROJECT_CODE_DIR / 'utils'
+
+
+sys.path.insert(1, str(UTILS_PATH))
+from utils import GlobalPaths
+
 class PathConfigResnet:
     # Collection of input variables shared among the modules
-    BASE    = Path('/home/stefanofiscale/Desktop/exoplanets/main/')
-    FEATURE_EXTRACTION = BASE / 'code' / 'feature_extraction'
+    FEATURE_EXTRACTION = GlobalPaths.PROJECT_ROOT / 'code' / 'feature_extraction'
     RESNET = FEATURE_EXTRACTION / 'resnet'
 
 # Device configuration

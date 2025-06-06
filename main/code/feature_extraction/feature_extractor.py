@@ -14,11 +14,20 @@ from vgg.vgg_class import PathConfigVGG19, VGG19, InputVariablesVGG19
 from dataclasses import dataclass, field
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 from typing import List
+from tqdm import tqdm
 from pathlib import Path
-from datetime import datetime
 
-sys.path.insert(0, '/home/stefanofiscale/Desktop/exoplanets/main/code/dataset/')
+# Defining local paths
+CURRENT_DIR = Path(__file__).resolve().parent
+PROJECT_CODE_DIR = CURRENT_DIR.parent
+UTILS_PATH = PROJECT_CODE_DIR / 'utils'
+DATASET_PATH = PROJECT_CODE_DIR / 'dataset'
+
+sys.path.insert(0, str(DATASET_PATH))
 from dataset import PathConfigDataset, Dataset
+
+sys.path.insert(1, str(UTILS_PATH))
+from utils import get_today_string, GlobalPaths
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Executing training on {device}")
@@ -26,9 +35,9 @@ print(f"Executing training on {device}")
 
 class PathConfigFeatureExtractor:
     # Collection of input variables shared among the modules
-    BASE         = Path('/home/stefanofiscale/Desktop/exoplanets/main/')
-    OUTPUT_FILES = BASE / 'output_files'
-    FEATURES_STEP1_CNN = BASE / 'data' / 'features_step1_cnn'
+    #BASE         = Path('/home/stefanofiscale/Desktop/exoplanets/main/')
+    OUTPUT_FILES = GlobalPaths.PROJECT_ROOT / 'output_files'
+    FEATURES_STEP1_CNN = GlobalPaths.PROJECT_ROOT / 'data' / 'features_step1_cnn'
 
 class ModelInspector:
   def __init__(self, model):
@@ -66,8 +75,16 @@ class TrainingMetrics:
         print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
 
 
-    def plot_metrics(self, output_path: str):
+    def plot_metrics(self, output_path: str, model_name: str, optimizer: str, num_epochs: int):
+        """
+          Salva i plot delle metriche con un nome file coerente con lo stile:
+          YYYY-MM-DD_<model_name>_<optimizer>_<num_epochs>_<metric>.png
+
+          In questo modo, rendo il formato del filename di output coerente con quello
+          relativo alle caratteristiche estratte, salvate in features_step1_cnn.
+        """
         os.makedirs(output_path, exist_ok=True)  # crea la directory se non esiste
+        today = get_today_string()
         metrics = ['loss', 'precision', 'recall', 'f1', 'auc_roc']
         for metric in metrics:
             plt.figure(figsize=(8, 5))
@@ -78,7 +95,8 @@ class TrainingMetrics:
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
-            plt.savefig(os.path.join(output_path, f"{metric}.png"), dpi=300)
+            filename = f"{today}_{model_name}_{optimizer}_{num_epochs}_{metric}.png"
+            plt.savefig(os.path.join(output_path, filename), dpi=300)
             plt.close()
 
 @dataclass
@@ -211,7 +229,7 @@ class Model:
           I file vengono salvati nella directory definita da PathConfigFeatureExtractor.FEATURES_STEP1_CNN.
         """
         # filepath structure: features_step1_cnn/YYYY-MM-DD_<model_name>_<optimizer>_<num_epochs>_<features/labels>.npy
-        today = datetime.today().strftime('%Y-%m-%d')
+        today = get_today_string()
         filepath_base = (
           PathConfigFeatureExtractor.FEATURES_STEP1_CNN / 
           f'{today}_{self.__training_hyperparameters._model_name}_{self.__training_hyperparameters._optimizer}_{str(self.__training_hyperparameters._num_epochs)}_'
@@ -224,7 +242,7 @@ class Model:
         print(f'Features and labels saved to {filepath_base}features.npy and {filepath_base}labels.npy')      
 
     def train(self):
-        for epoch in range(self.__training_hyperparameters._num_epochs):
+        for epoch in tqdm(range(self.__training_hyperparameters._num_epochs), desc="Training Epochs", unit="epoch"):
           self.__model.train()    # setta il modello in modalità training
           running_loss = 0.0
 
@@ -285,10 +303,15 @@ class Model:
           if epoch == self.__training_hyperparameters._num_epochs - 1:
             self.__extracted_features.append(features.detach().cpu().numpy())
             self.__extracted_labels.append(batch_y.detach().cpu().numpy())
-        
+
+        print("\nTraining completed.")        
         # Plot training metrics once training is completed. Use methods from the class TrainingMetrics
-        print("\nTraining completed.")
-        self.__training_metrics.plot_metrics(PathConfigFeatureExtractor.OUTPUT_FILES / self.__training_hyperparameters._metrics_output_path)
+        self.__training_metrics.plot_metrics(
+          output_path=PathConfigFeatureExtractor.OUTPUT_FILES / self.__training_hyperparameters._metrics_output_path,
+          model_name=self.__training_hyperparameters._model_name,
+          optimizer=self.__training_hyperparameters._optimizer,
+          num_epochs=self.__training_hyperparameters._num_epochs
+          )
         
         # Concatenate and save feature vectors and labels
         self.__save_extracted_feature_vectors()

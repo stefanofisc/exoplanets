@@ -7,15 +7,24 @@ from dataclasses import dataclass
 from ptflops import get_model_complexity_info
 from pathlib import Path
 
+# Defining local paths
+CURRENT_DIR = Path(__file__).resolve().parent
+PROJECT_FEATURE_EXTRACTION_DIR = CURRENT_DIR.parent
+PROJECT_CODE_DIR = CURRENT_DIR.parent.parent
+UTILS_PATH = PROJECT_CODE_DIR / 'utils'
+
+
+sys.path.insert(0, str(PROJECT_FEATURE_EXTRACTION_DIR))
+from m1_class import ModelInspector
+
+sys.path.insert(1, str(UTILS_PATH))
+from utils import GlobalPaths
+
 class PathConfigVGG19:
     # Collection of input variables shared among the modules
-    BASE    = Path('/home/stefanofiscale/Desktop/exoplanets/main/')
-    FEATURE_EXTRACTION = BASE / 'code' / 'feature_extraction'
+    FEATURE_EXTRACTION = GlobalPaths.PROJECT_ROOT / 'code' / 'feature_extraction'
     # Path to this module so that it can be used in combination with feature_extraction
     VGG = FEATURE_EXTRACTION / 'vgg'
-
-sys.path.insert(0,'/home/stefanofiscale/Desktop/exoplanets/main/code/feature_extraction/')
-from m1_class import ModelInspector
 
 @dataclass
 class InputVariablesVGG19:
@@ -321,5 +330,3 @@ def main_vgg():
 
 if __name__ == '__main__':
     main_vgg()
-
-
