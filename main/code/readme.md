@@ -1,4 +1,6 @@
 ### EN
+This file describes how dataset and feature_extraction modules work.
+
 The model processes as input phase-folded and binned light curves, which represent the transits to be classified. These light curves are stored in csv-format files, and each is associated with a label, which identifies its nature (e.g. planet, astrophysical false positive, non-astrophysical false positive). 
 
 The dataset folder contains the code responsible for processing the light curves. Through the configuration file config_dataset.yaml it is possible to choose the dataset to be processed, and to perform a number of operations such as generating/loading train-test splits in csv or tensor format. Since the model processes data in torch.utils.data.DataLoader format, we suggest directly loading data in tensor format by setting the variable load_tensors:True. This lightens the computational load of the entire pipeline.
@@ -10,6 +12,8 @@ Once loaded, the light curves are processed through the feature_extraction modul
 An output file, in .out format, reporting the training details is saved in main/output_files/, while plots of the training metrics are saved in main/output_files/training_metrics/. The names of the output files and plots follow the same format as those for the saved features.
 
 ### IT
+Questo file descrive il funzionamento dei moduli dataset e feature_extraction.
+
 Il modello processa in input curve di luce 'phase-folded' e binnate, che rappresentano i transiti da classificare. Queste curve di luce sono memorizzate in file di formato csv, e ad ognuna di esse è associata un'etichetta, che ne identifica la natura (e.g. pianeta, falso positivo astrofisico, falso positivo non-astrofisico). 
 
 La cartella dataset contiene il codice responsabile del processamento delle curve di luce. Attraverso il file di configurazione config_dataset.yaml è possibile scegliere il dataset da processare, ed effettuare una serie di operazioni quali: generazione / caricamento di train-test splits in formato csv o tensoriale. Siccome il modello processa dati in formato torch.utils.data.DataLoader, suggeriamo di caricare direttamente i dati in formato tensoriale, settando la variabile load_tensors:True. Questo alleggerisce il carico computazionale dell'intera pipeline.
