@@ -16,8 +16,6 @@ class PathConfigDataset:
     CSV     = MAIN_DATASET / 'csv_format'
     SPLIT   = MAIN_DATASET / 'csv_format_split_80_20'
     TENSORS = MAIN_DATASET / 'tensor_format_split_80_20'
-    # Path to this module so that it can be used in combination with feature_extraction
-    BASE_DATASET_MODULE = BASE / 'code' / 'dataset'
 
 class Dataset:
     def __init__(self, dataframe, config):

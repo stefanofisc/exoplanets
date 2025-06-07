@@ -9,35 +9,23 @@ import sys
 import os
 import matplotlib.pyplot as plt
 from pandas import read_csv
-from resnet.resnet_class import PathConfigResnet, ResidualBlock, ResNet, InputVariablesResnet
-from vgg.vgg_class import PathConfigVGG19, VGG19, InputVariablesVGG19
+from resnet.resnet_class import ResidualBlock, ResNet, InputVariablesResnet
+from vgg.vgg_class import VGG19, InputVariablesVGG19
 from dataclasses import dataclass, field
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 from typing import List
 from tqdm import tqdm
 from pathlib import Path
 
-# Defining local paths
-CURRENT_DIR = Path(__file__).resolve().parent
-PROJECT_CODE_DIR = CURRENT_DIR.parent
-UTILS_PATH = PROJECT_CODE_DIR / 'utils'
-DATASET_PATH = PROJECT_CODE_DIR / 'dataset'
-
-sys.path.insert(0, str(DATASET_PATH))
-from dataset import PathConfigDataset, Dataset
-
-sys.path.insert(1, str(UTILS_PATH))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from utils import get_today_string, GlobalPaths
+
+sys.path.insert(1, str(GlobalPaths.DATASET))
+from dataset import Dataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Executing training on {device}")
 
-
-class PathConfigFeatureExtractor:
-    # Collection of input variables shared among the modules
-    #BASE         = Path('/home/stefanofiscale/Desktop/exoplanets/main/')
-    OUTPUT_FILES = GlobalPaths.PROJECT_ROOT / 'output_files'
-    FEATURES_STEP1_CNN = GlobalPaths.PROJECT_ROOT / 'data' / 'features_step1_cnn'
 
 class ModelInspector:
   def __init__(self, model):
@@ -125,7 +113,7 @@ class InputVariablesModelTraining:
             _num_classes=config['num_classes'],
             _weight_decay=config.get('weight_decay', None),   # necessario solo se optimizer = SGD
             _momentum=config.get('momentum', None),           # necessario solo se optimizer = SGD
-            _metrics_output_path=config.get('metrics_output_path', PathConfigFeatureExtractor.OUTPUT_FILES / 'training_metrics')
+            _metrics_output_path=config.get('metrics_output_path', GlobalPaths.OUTPUT_FILES / 'training_metrics')
             )
     
     # define get and set methods
@@ -225,12 +213,12 @@ class Model:
           Il percorso del file è costruito dinamicamente in base alla data corrente (formato YYYY-MM-DD),
           al nome del modello, all'ottimizzatore utilizzato e al numero di epoche di training.
 
-          I file vengono salvati nella directory definita da PathConfigFeatureExtractor.FEATURES_STEP1_CNN.
+          I file vengono salvati nella directory definita da GlobalPaths.FEATURES_STEP1_CNN.
         """
         # filepath structure: features_step1_cnn/<YYYY-MM-DD>_<model_name>_<optimizer>_<num_epochs>_<catalog_name>_<features/labels>.npy
         today = get_today_string()
         filepath_base = (
-          PathConfigFeatureExtractor.FEATURES_STEP1_CNN / 
+          GlobalPaths.FEATURES_STEP1_CNN / 
           f'{today}_{self.__training_hyperparameters._model_name}_{self.__training_hyperparameters._optimizer}_{self.__training_hyperparameters._num_epochs}_{self.__dataset.get_catalog_name()}_'
         )
         all_features = np.concatenate(self.__extracted_features, axis=0)
@@ -306,7 +294,7 @@ class Model:
         print("\nTraining completed.")        
         # Plot training metrics once training is completed. Use methods from the class TrainingMetrics
         self.__training_metrics.plot_metrics(
-          output_path=PathConfigFeatureExtractor.OUTPUT_FILES / self.__training_hyperparameters._metrics_output_path,
+          output_path=GlobalPaths.OUTPUT_FILES / self.__training_hyperparameters._metrics_output_path,
           model_name=self.__training_hyperparameters._model_name,
           optimizer=self.__training_hyperparameters._optimizer,
           num_epochs=self.__training_hyperparameters._num_epochs,
@@ -338,21 +326,21 @@ class FeatureExtractor:
     
     def __init_dataset(self):
       # 1. Initialize Dataset object with config_dataset.yaml
-      with open(PathConfigDataset.BASE_DATASET_MODULE / 'config_dataset.yaml', 'r') as fd:
+      with open(GlobalPaths.CONFIG / 'config_dataset.yaml', 'r') as fd:
           config_fd = yaml.safe_load(fd)
       # Carica il dataset CSV
-      df = read_csv(PathConfigDataset.CSV / config_fd['dataset_filename'])
+      df = read_csv(GlobalPaths.CSV / config_fd['dataset_filename'])
       # Istanzia la classe Dataset ed esegue tutte le operazioni
       return Dataset(df, config_fd)
 
     def __init_model(self):
       # 2. Initialize model architecture with config_vgg(resnet).yaml.
-      with open('config_feature_extractor.yaml', 'r') as fe:
+      with open(GlobalPaths.CONFIG / 'config_feature_extractor.yaml', 'r') as fe:
           config_fe = yaml.safe_load(fe)
       
       if config_fe['model_name'] == 'vgg':
           # load data from config_vgg.yaml
-          self.__model_hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(PathConfigVGG19.VGG / 'config_vgg.yaml')
+          self.__model_hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_vgg.yaml')
           
           # Create the model architecture
           self.__model = VGG19(
@@ -365,7 +353,7 @@ class FeatureExtractor:
           print(self.__model)
       else:
           # load data from config_resnet.yaml
-          self.__model_hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(PathConfigResnet.RESNET / 'config_resnet.yaml')
+          self.__model_hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_resnet.yaml')
 
           # Create the model
           self.__model = ResNet(
@@ -376,7 +364,7 @@ class FeatureExtractor:
           print(self.__model)
     
     def __init_training_hyperparameters(self):
-        self.__training_hyperparameters_object = InputVariablesModelTraining.get_input_hyperparameters('config_feature_extractor.yaml')
+        self.__training_hyperparameters_object = InputVariablesModelTraining.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_feature_extractor.yaml')
 
     def __feature_extraction(self):
       # Initialize Model object

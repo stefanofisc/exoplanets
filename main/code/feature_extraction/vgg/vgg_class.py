@@ -7,24 +7,11 @@ from dataclasses import dataclass
 from ptflops import get_model_complexity_info
 from pathlib import Path
 
-# Defining local paths
-CURRENT_DIR = Path(__file__).resolve().parent
-PROJECT_FEATURE_EXTRACTION_DIR = CURRENT_DIR.parent
-PROJECT_CODE_DIR = CURRENT_DIR.parent.parent
-UTILS_PATH = PROJECT_CODE_DIR / 'utils'
-
-
-sys.path.insert(0, str(PROJECT_FEATURE_EXTRACTION_DIR))
-from m1_class import ModelInspector
-
-sys.path.insert(1, str(UTILS_PATH))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'utils'))
 from utils import GlobalPaths
 
-class PathConfigVGG19:
-    # Collection of input variables shared among the modules
-    FEATURE_EXTRACTION = GlobalPaths.PROJECT_ROOT / 'code' / 'feature_extraction'
-    # Path to this module so that it can be used in combination with feature_extraction
-    VGG = FEATURE_EXTRACTION / 'vgg'
+sys.path.insert(1, str(GlobalPaths.FEATURE_EXTRACTION))
+from m1_class import ModelInspector
 
 @dataclass
 class InputVariablesVGG19:
@@ -304,7 +291,7 @@ class VGG19(nn.Module):
 
 def main_vgg():
     # Get hyperparameters
-    hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(PathConfigVGG19.VGG / 'config_vgg.yaml')
+    hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_vgg.yaml')
 
     # NOTE. Experimental: print hyperparameters
     print('\nExperimental: print model hyperparameters')

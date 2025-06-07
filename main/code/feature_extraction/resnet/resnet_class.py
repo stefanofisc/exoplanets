@@ -9,19 +9,8 @@ from dataclasses import dataclass
 from ptflops import get_model_complexity_info
 from pathlib import Path
 
-# Defining local paths
-CURRENT_DIR = Path(__file__).resolve().parent
-PROJECT_CODE_DIR = CURRENT_DIR.parent.parent
-UTILS_PATH = PROJECT_CODE_DIR / 'utils'
-
-
-sys.path.insert(1, str(UTILS_PATH))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'utils'))
 from utils import GlobalPaths
-
-class PathConfigResnet:
-    # Collection of input variables shared among the modules
-    FEATURE_EXTRACTION = GlobalPaths.PROJECT_ROOT / 'code' / 'feature_extraction'
-    RESNET = FEATURE_EXTRACTION / 'resnet'
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -196,7 +185,7 @@ class ResNet(nn.Module):
 
 def main_resnet():
     # Get hyperparameters
-    hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(PathConfigResnet.RESNET / 'config_resnet.yaml')
+    hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_resnet.yaml')
 
     # NOTE. Experimental: print hyperparameters
     for field, value in hyperparameters_object.__dict__.items():
