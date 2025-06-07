@@ -1,3 +1,4 @@
+import sys
 import yaml
 import torch
 import pandas as pd
@@ -5,14 +6,14 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from collections import Counter
-# Libraries for class containing global variables
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
+from utils import GlobalPaths
 
 class PathConfigDataset:
     # Collection of input variables shared among the modules
-    BASE    = Path('/home/stefanofiscale/Desktop/exoplanets/main/')
-    DATA    = BASE / 'data'
-    MAIN_DATASET = DATA / 'main_datasets'
+    MAIN_DATASET = GlobalPaths.DATA / 'main_datasets'
     CSV     = MAIN_DATASET / 'csv_format'
     SPLIT   = MAIN_DATASET / 'csv_format_split_80_20'
     TENSORS = MAIN_DATASET / 'tensor_format_split_80_20'
@@ -243,7 +244,7 @@ class Dataset:
 
 def main_dataset_class():
     # Carica il file di configurazione YAML
-    with open("config_dataset.yaml", "r") as f:
+    with open(GlobalPaths.CONFIG / "config_dataset.yaml", "r") as f:
         config = yaml.safe_load(f)
 
     # Carica il dataset CSV
