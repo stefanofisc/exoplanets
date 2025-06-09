@@ -98,6 +98,8 @@ class InputVariablesModelTraining:
     _weight_decay: float
     _momentum: float
     _metrics_output_path: str
+    _save_model: bool
+    _purpose: str
 
     @classmethod
     def get_input_hyperparameters(cls, filename):
@@ -113,7 +115,9 @@ class InputVariablesModelTraining:
             _num_classes=config['num_classes'],
             _weight_decay=config.get('weight_decay', None),   # necessario solo se optimizer = SGD
             _momentum=config.get('momentum', None),           # necessario solo se optimizer = SGD
-            _metrics_output_path=config.get('metrics_output_path', GlobalPaths.OUTPUT_FILES / 'training_metrics')
+            _metrics_output_path=config.get('metrics_output_path', GlobalPaths.OUTPUT_FILES / 'training_metrics'),
+            _save_model=config.get('save_model', False),
+            _purpose=config.get('purpose', 'TBD')
             )
     
     # define get and set methods
@@ -214,8 +218,9 @@ class Model:
           al nome del modello, all'ottimizzatore utilizzato e al numero di epoche di training.
 
           I file vengono salvati nella directory definita da GlobalPaths.FEATURES_STEP1_CNN.
+          
+          filepath structure: features_step1_cnn/<YYYY-MM-DD>_<model_name>_<optimizer>_<num_epochs>_<catalog_name>_<features/labels>.npy
         """
-        # filepath structure: features_step1_cnn/<YYYY-MM-DD>_<model_name>_<optimizer>_<num_epochs>_<catalog_name>_<features/labels>.npy
         today = get_today_string()
         filepath_base = (
           GlobalPaths.FEATURES_STEP1_CNN / 
@@ -226,7 +231,36 @@ class Model:
 
         np.save(filepath_base.with_name(filepath_base.name + 'features.npy'), all_features)
         np.save(filepath_base.with_name(filepath_base.name + 'labels.npy'), all_labels)
-        print(f'Features and labels saved to {filepath_base}features.npy and {filepath_base}labels.npy')      
+        print(f'[✓] Features and labels saved to {filepath_base}features.npy and {filepath_base}labels.npy')      
+
+    def __save_model(self):
+      """
+        Salva il modello addestrato in formato .pt. Il nome del file segue uno standard basato su:
+        - data corrente (YYYY-MM-DD)
+        - nome del modello (es. 'resnet18')
+        - ottimizzatore (es. 'adam')
+        - numero di epoche
+        - nome del dataset (es. 'kepler_q1q17_dr25')
+        - scopo del salvataggio ('from_scratch', 'finetuned', etc.)
+
+        Questo naming permette una chiara distinzione tra modelli addestrati da zero e quelli fine-tuned.
+
+        Il file non verrà sovrascritto se già esistente.
+      """
+      today = get_today_string()
+      model_name = self.__training_hyperparameters._model_name
+      optimizer = self.__training_hyperparameters._optimizer
+      num_epochs = self.__training_hyperparameters._num_epochs
+      df_name = self.__dataset.get_catalog_name()
+      purpose = self.__training_hyperparameters._purpose
+
+      filename = f'{today}_{model_name}_{optimizer}_{num_epochs}_{df_name}_{purpose}_model.pt'
+
+      if os.path.exists(filename):
+        print(f'[WARNING] Filename: {filename}, already exists. \nThe model has not been saved to avoid overwriting.')
+      else:
+        torch.save(self.__model.state_dict(), GlobalPaths.TRAINED_MODELS / filename)
+        print(f'[✓] Model saved in {filename}')
 
     def train(self):
         for epoch in tqdm(range(self.__training_hyperparameters._num_epochs), desc="Training Epochs", unit="epoch"):
@@ -303,6 +337,10 @@ class Model:
         
         # Concatenate and save feature vectors and labels
         self.__save_extracted_feature_vectors()
+
+        # Save the model
+        if self.__training_hyperparameters._save_model:
+          self.__save_model()
 
     def evaluate(self):
         pass

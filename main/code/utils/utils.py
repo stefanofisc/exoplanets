@@ -8,6 +8,7 @@ class GlobalPaths:
     CODE = MAIN / 'code'                            # main/code/
     DATA = MAIN / 'data'                            # main/data/
     OUTPUT_FILES = MAIN / 'output_files'            # main/output_files/
+    TRAINED_MODELS = MAIN / 'trained_models'        # main/trained_models/
     # data/
     CSV = DATA / 'main_datasets' / 'csv_format'
     FEATURES_STEP1_CNN = DATA / 'features_step1_cnn'
