@@ -89,6 +89,7 @@ class TrainingMetrics:
 @dataclass
 class InputVariablesModelTraining:
     # define type of input data
+    _mode: str
     _model_name: str
     _optimizer: str
     _learning_rate: float
@@ -100,6 +101,7 @@ class InputVariablesModelTraining:
     _metrics_output_path: str
     _save_model: bool
     _purpose: str
+    _saved_model_name: str
 
     @classmethod
     def get_input_hyperparameters(cls, filename):
@@ -107,46 +109,56 @@ class InputVariablesModelTraining:
             config = yaml.safe_load(file)
 
         return cls(
-            _model_name=config['model_name'],
-            _optimizer=config['optimizer'],
-            _learning_rate=config['learning_rate'],
-            _num_epochs=config['num_epochs'],
-            _batch_size=config['batch_size'],
-            _num_classes=config['num_classes'],
+            _mode=config['mode'],                             # the only mandatory input variable: values={train,test}
+            _model_name=config.get('model_name', None),
+            _optimizer=config.get('optimizer', None),
+            _learning_rate=config.get('learning_rate', None),
+            _num_epochs=config.get('num_epochs', None),
+            _batch_size=config.get('batch_size', 64),
+            _num_classes=config.get('num_classes', None),
             _weight_decay=config.get('weight_decay', None),   # necessario solo se optimizer = SGD
             _momentum=config.get('momentum', None),           # necessario solo se optimizer = SGD
             _metrics_output_path=config.get('metrics_output_path', GlobalPaths.OUTPUT_FILES / 'training_metrics'),
             _save_model=config.get('save_model', False),
-            _purpose=config.get('purpose', 'TBD')
+            _purpose=config.get('purpose', 'TBD'),
+            _saved_model_name=config.get('saved_model_name', None)
             )
     
     # define get and set methods
+    def get_mode(self):
+      return self._mode
+    
     pass
 
 class Model:
-    def __init__(self, dataset, model, model_hyperparameters_object, training_hyperparameters_object):
+    def __init__(self, dataset, model, model_hyperparameters_object, training_test_hyperparameters_object):
         """
             Costruttore della classe Model. 
             Input:
                 - dataset: dataset di input. Oggetto della classe Dataset
                 - model: modello di input. Può essere un oggetto della classe Resnet o VGG;
                 - model_hyperparameters_object: iperparametri per definire l'architettura del modello;
-                - training_hyperparameters_object: iperparametri di training;
+                - training_test_hyperparameters_object: iperparametri di training / test;
         """
         # Init model architecture
         self.__model = model
         self.__model.to(device)
         self.__model_hyperparameters = model_hyperparameters_object
-        self.__training_hyperparameters = training_hyperparameters_object
-        self.__training_metrics = TrainingMetrics()
         # Init dataset and training-test tensors
         self.__dataset = dataset
-        #NOTE. Commento dati train e test perché per ora non mi servono singolarmente.
-        self.__training_data_loader = self.__dataset.get_training_data_loader(batch_size = self.__training_hyperparameters._batch_size)
-        # Init loss function
-        self.__criterion = self.__init_loss()
-        # Init optimizer
-        self.__optimizer = self.__init_optimizer()
+        self.__training_data_loader = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+        
+
+        if training_test_hyperparameters_object.get_mode() == 'train':
+          self.__training_hyperparameters = training_test_hyperparameters_object
+          self.__training_metrics = TrainingMetrics()
+          # Init loss function
+          self.__criterion = self.__init_loss()
+          # Init optimizer
+          self.__optimizer = self.__init_optimizer()
+        else:
+          self.__test_hyperparameters = training_test_hyperparameters_object
+        
         # Output: feature vectors
         self.__extracted_features = []
         self.__extracted_labels = []
@@ -342,9 +354,19 @@ class Model:
         if self.__training_hyperparameters._save_model:
           self.__save_model()
 
-    def evaluate(self):
-        pass
-        
+    def extract_features_from_testset(self):
+      # Load the model
+      saved_model_name = self.__test_hyperparameters._saved_model_name
+
+      if not os.path.exists(GlobalPaths.TRAINED_MODELS / saved_model_name):
+        raise ValueError(f'[ERROR] No occurrence found in "trained_models/" for {saved_model_name}.')
+
+      self.__model.load_state_dict(torch.load(GlobalPaths.TRAINED_MODELS / saved_model_name, weights_only=True))
+      self.__model.eval()
+
+      # Load test set
+      
+
     def __del__(self):
         print('\nDestructor called for the class Model')
 
@@ -358,9 +380,9 @@ class FeatureExtractor:
       self.__dataset_handler = self.__init_dataset()
       self.__model_hyperparameters_object = None
       self.__model = None
-      self.__training_hyperparameters_object = None
+      self.__training_test_hyperparameters_object = None
       self.__init_model()
-      self.__init_training_hyperparameters()
+      self.__init_training_test_hyperparameters()
     
     def __init_dataset(self):
       # 1. Initialize Dataset object with config_dataset.yaml
@@ -401,8 +423,8 @@ class FeatureExtractor:
             ).to(device)
           print(self.__model)
     
-    def __init_training_hyperparameters(self):
-        self.__training_hyperparameters_object = InputVariablesModelTraining.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_feature_extractor.yaml')
+    def __init_training_test_hyperparameters(self):
+        self.__training_test_hyperparameters_object = InputVariablesModelTraining.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_feature_extractor.yaml')
 
     def __feature_extraction(self):
       # Initialize Model object
@@ -410,10 +432,15 @@ class FeatureExtractor:
         self.__dataset_handler, 
         self.__model, 
         self.__model_hyperparameters_object, 
-        self.__training_hyperparameters_object
+        self.__training_test_hyperparameters_object
         )
-      # Train the model
-      model.train()
+      if self.__training_test_hyperparameters_object.get_mode() == 'train':
+        # Train the model
+        model.train()
+      else:
+        # Extract features from the test set
+        model.extract_features_from_testset()
+      
 
     def main(self):
       self.__feature_extraction()
