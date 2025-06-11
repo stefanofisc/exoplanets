@@ -144,21 +144,28 @@ class Model:
         self.__model = model
         self.__model.to(device)
         self.__model_hyperparameters = model_hyperparameters_object
-        # Init dataset and training-test tensors
+        # Init dataset object
         self.__dataset = dataset
-        self.__training_data_loader = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
         
+        self.__training_hyperparameters = None
+        self.__test_hyperparameters = None
 
         if training_test_hyperparameters_object.get_mode() == 'train':
+          # Load training set (a PyTorch DataLoader object)
+          self.__training_data_loader = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+          
           self.__training_hyperparameters = training_test_hyperparameters_object
           self.__training_metrics = TrainingMetrics()
-          # Init loss function
-          self.__criterion = self.__init_loss()
           # Init optimizer
           self.__optimizer = self.__init_optimizer()
         else:
+          # Load test set (a PyTorch DataLoader object)
+          self.__test_data_loader = self.__dataset.get_test_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
           self.__test_hyperparameters = training_test_hyperparameters_object
         
+        # Init loss function
+        self.__criterion = self.__init_loss()
+
         # Output: feature vectors
         self.__extracted_features = []
         self.__extracted_labels = []
@@ -168,10 +175,18 @@ class Model:
           Method for loss function initialization. Select one between Binary Cross-Entropy and Cross-Entropy depending on
           the classification task at hand.
         """
-        if self.__model_hyperparameters._fc_output_size == 1:
-          return nn.BCEWithLogitsLoss(pos_weight = self.__init_class_weighting())
+        if self.__training_hyperparameters:
+          # Training mode
+          if self.__model_hyperparameters._fc_output_size == 1:
+            return nn.BCEWithLogitsLoss(pos_weight = self.__init_class_weighting())
+          else:
+            return nn.CrossEntropyLoss(weight = self.__init_class_weighting())
         else:
-          return nn.CrossEntropyLoss(weight = self.__init_class_weighting())
+          # Test mode. Init loss without class weighting
+          # NOTE. 2025-06-11
+          #       We initialize loss function for multi-class classification.
+          #       Future implementations will consider the initialization of binary loss in test mode
+          return nn.CrossEntropyLoss()
 
     def __init_class_weighting(self):
         """
@@ -207,17 +222,22 @@ class Model:
 
     def __feed_forward_pass(self, batch_x):
         # Feed-forward pass
-        if 'resnet' in self.__training_hyperparameters._model_name:
+        if self.__training_hyperparameters:
+          model_name = self.__training_hyperparameters._model_name
+        else:
+          model_name = self.__test_hyperparameters._model_name
+        
+        if 'resnet' in model_name:
           # The order is swapped wrt VGG19 as Resnet class contains both feature extraction and classification in it
           outputs = self.__model(batch_x)
           features = self.__model.get_feature_extraction_output() 
 
-        elif 'vgg' in self.__training_hyperparameters._model_name:
+        elif 'vgg' in model_name:
           features = self.__model.get_feature_extraction_output(batch_x)
           outputs = self.__model.get_classification_output(features)
 
         else:
-          raise ValueError(f'Got {self.__training_hyperparameters._model_name}, but work with vgg and resnet only.')
+          raise ValueError(f'Got {model_name}, but work with vgg and resnet only.')
         
         return features, outputs
 
@@ -365,6 +385,21 @@ class Model:
       self.__model.eval()
 
       # Load test set
+      # Disable gradients computation during model assessment
+      with torch.no_grad():
+        for batch_x, batch_y in self.__test_data_loader:
+            batch_x = batch_x.unsqueeze(1) 
+            
+            batch_x, batch_y = batch_x.to(device), batch_y.to(device) # put it on the same device where the model is
+            
+            # Feed-forward pass
+            features, outputs = self.__feed_forward_pass(batch_x)
+            print(f'features shape: {features.shape}, output shape: {outputs.shape}')
+            exit(0)
+
+            # save features
+            # pass
+
       
 
     def __del__(self):

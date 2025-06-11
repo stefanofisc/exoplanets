@@ -228,6 +228,11 @@ class Dataset:
       """
       train_dataset = TensorDataset(self.__X_train, self.__y_train)
       return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
+    
+    def get_test_data_loader(self, batch_size):
+      # Analoso di get_training_data_loader, con test set.
+      test_dataset = TensorDataset(self.__X_test, self.__y_test)
+      return DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
 
     def get_training_set_length(self):
       return len(self.__X_train)

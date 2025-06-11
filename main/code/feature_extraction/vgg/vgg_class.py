@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'utils'))
 from utils import GlobalPaths
 
 sys.path.insert(1, str(GlobalPaths.FEATURE_EXTRACTION))
-from m1_class import ModelInspector
+#from m1_class import ModelInspector
 
 @dataclass
 class InputVariablesVGG19:
@@ -308,7 +308,7 @@ def main_vgg():
         )
     print(vgg19)
 
-    inspector_vgg19 = ModelInspector(vgg19)
+    #inspector_vgg19 = ModelInspector(vgg19)
 
     print(f'vgg19 #params={inspector_vgg19.count_trainable_params()}')
     
