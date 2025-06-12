@@ -194,14 +194,15 @@ class Model:
           Output:
             - class_weights: for multi-class classification, a torch.Tensor containing the weights computed for each class
         """
+        split='train'
         if self.__model_hyperparameters._fc_output_size == 1:
-          num_pos = self.__dataset.get_training_set_labels().sum()                                # Number of positive samples (class 1: planet)
-          num_neg = len(self.__dataset.get_training_set_labels()) - num_pos                       #           negative         (class 0: not-planet)
+          num_pos = self.__dataset.get_training_test_set_labels(split).sum()                                # Number of positive samples (class 1: planet)
+          num_neg = len(self.__dataset.get_training_test_set_labels(split)) - num_pos                       #           negative         (class 0: not-planet)
           pos_weight = (num_neg / num_pos).clone().detach().to(device)  # Weight applied to the loss function (ICF)
           return pos_weight
         else:
-          class_counts = torch.bincount(self.__dataset.get_training_set_labels(), minlength=self.__training_hyperparameters._num_classes) # Compute class frequency
-          class_weights = len(self.__dataset.get_training_set_labels()) / (self.__training_hyperparameters._num_classes * class_counts)   # ICF method
+          class_counts = torch.bincount(self.__dataset.get_training_test_set_labels(split), minlength=self.__training_hyperparameters._num_classes) # Compute class frequency
+          class_weights = len(self.__dataset.get_training_test_set_labels(split)) / (self.__training_hyperparameters._num_classes * class_counts)   # ICF method
           class_weights = class_weights.float().to(device) # Convert into tensor format
           return class_weights
 
@@ -251,18 +252,35 @@ class Model:
 
           I file vengono salvati nella directory definita da GlobalPaths.FEATURES_STEP1_CNN.
           
-          filepath structure: features_step1_cnn/<YYYY-MM-DD>_<model_name>_<optimizer>_<num_epochs>_<catalog_name>_<features/labels>.npy
+          filepath structure: features_step1_cnn/<YYYY-MM-DD>_<model_name>_<optimizer>_<num_epochs>_<catalog_name>_<mode>_<features/labels>.npy
         """
-        today = get_today_string()
-        filepath_base = (
-          GlobalPaths.FEATURES_STEP1_CNN / 
-          f'{today}_{self.__training_hyperparameters._model_name}_{self.__training_hyperparameters._optimizer}_{self.__training_hyperparameters._num_epochs}_{self.__dataset.get_catalog_name()}_'
-        )
+        if self.__training_hyperparameters:
+          # Define filename based on mode:train/test
+          today = get_today_string()
+          model_name = self.__training_hyperparameters._model_name
+          optimizer = self.__training_hyperparameters._optimizer
+          num_epochs = self.__training_hyperparameters._num_epochs
+          catalog_name = self.__dataset.get_catalog_name()
+          mode = self.__training_hyperparameters._mode
+          filepath_base = (
+            GlobalPaths.FEATURES_STEP1_CNN / 
+            f'{today}_{model_name}_{optimizer}_{num_epochs}_{catalog_name}_{mode}_'
+          )
+        else:
+          # do stuff starting from the self.__test_hyperparameters._saved_model_name parameter
+          prefix = (self.__test_hyperparameters._saved_model_name).split("_from")[0]
+          mode = self.__test_hyperparameters._mode
+          filepath_base = (
+            GlobalPaths.FEATURES_STEP1_CNN /
+            f'{prefix}_{mode}_'
+          )
+
         all_features = np.concatenate(self.__extracted_features, axis=0)
         all_labels = np.concatenate(self.__extracted_labels, axis=0)
 
         np.save(filepath_base.with_name(filepath_base.name + 'features.npy'), all_features)
         np.save(filepath_base.with_name(filepath_base.name + 'labels.npy'), all_labels)
+
         print(f'[✓] Features and labels saved to {filepath_base}features.npy and {filepath_base}labels.npy')      
 
     def __save_model(self):
@@ -339,7 +357,7 @@ class Model:
             all_probs.extend(probs.detach().cpu().numpy())
           
           # Training on i-th batch has ended. Compute epoch metrics
-          epoch_loss = running_loss / self.__dataset.get_training_set_length()
+          epoch_loss = running_loss / self.__dataset.get_training_test_set_length(split='train')
           precision = precision_score(all_labels, all_outputs, average='macro', zero_division=0)
           recall = recall_score(all_labels, all_outputs, average='macro', zero_division=0)
           f1 = f1_score(all_labels, all_outputs, average='macro', zero_division=0)
@@ -377,29 +395,32 @@ class Model:
     def extract_features_from_testset(self):
       # Load the model
       saved_model_name = self.__test_hyperparameters._saved_model_name
+      model_path = GlobalPaths.TRAINED_MODELS / saved_model_name
 
-      if not os.path.exists(GlobalPaths.TRAINED_MODELS / saved_model_name):
+      if not os.path.exists(model_path):
         raise ValueError(f'[ERROR] No occurrence found in "trained_models/" for {saved_model_name}.')
 
-      self.__model.load_state_dict(torch.load(GlobalPaths.TRAINED_MODELS / saved_model_name, weights_only=True))
+      self.__model.load_state_dict(torch.load(model_path, weights_only=True))
+
       self.__model.eval()
 
-      # Load test set
       # Disable gradients computation during model assessment
       with torch.no_grad():
         for batch_x, batch_y in self.__test_data_loader:
-            batch_x = batch_x.unsqueeze(1) 
-            
+
+            batch_x = batch_x.unsqueeze(1)  # (batch_size, signal_length) --> (batch_size, channels, signal_length)
+
             batch_x, batch_y = batch_x.to(device), batch_y.to(device) # put it on the same device where the model is
             
             # Feed-forward pass
-            features, outputs = self.__feed_forward_pass(batch_x)
-            print(f'features shape: {features.shape}, output shape: {outputs.shape}')
-            exit(0)
+            features, _ = self.__feed_forward_pass(batch_x)
 
-            # save features
-            # pass
-
+            # Store the extracted (features,labels)
+            self.__extracted_features.append(features.detach().cpu().numpy())
+            self.__extracted_labels.append(batch_y.detach().cpu().numpy())
+      
+      # Concatenate and save feature vectors and labels
+      self.__save_extracted_feature_vectors()
       
 
     def __del__(self):

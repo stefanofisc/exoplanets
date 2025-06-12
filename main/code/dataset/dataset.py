@@ -234,11 +234,17 @@ class Dataset:
       test_dataset = TensorDataset(self.__X_test, self.__y_test)
       return DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
 
-    def get_training_set_length(self):
-      return len(self.__X_train)
+    def get_training_test_set_length(self, split='train'):
+      if split == 'train':
+        return len(self.__X_train)
+      else:
+        return len(self.__X_test)
     
-    def get_training_set_labels(self):
-      return self.__y_train
+    def get_training_test_set_labels(self, split='train'):
+      if split == 'train':
+        return self.__y_train
+      else:
+        return self.__y_test
     
     def get_catalog_name(self):
       return self._config['catalog_name']
