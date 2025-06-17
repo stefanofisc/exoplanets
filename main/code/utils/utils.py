@@ -12,6 +12,7 @@ class GlobalPaths:
     # data/
     CSV = DATA / 'main_datasets' / 'csv_format'
     FEATURES_STEP1_CNN = DATA / 'features_step1_cnn'
+    FEATURES_STEP2_TSNE = DATA / 'features_step2_tsne'
     # code/
     DATASET = CODE / 'dataset'                      # main/code/dataset
     FEATURE_EXTRACTION = CODE / 'feature_extraction'# main/code/feature_extraction

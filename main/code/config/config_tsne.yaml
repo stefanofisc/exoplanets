@@ -1,0 +1,4 @@
+n_comp: 2         # Number of output dimensions. values={2,3}
+perplexity: 50    # Larger datasets usually require a larger perplexity. Consider selecting a value between 5 and 50
+max_iter: 3000
+extracted_features_filename: '2025-06-12_resnet34_sgd_10_kepler_dr25_train_features.npy'
