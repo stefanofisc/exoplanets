@@ -277,7 +277,7 @@ class Model:
 
         all_features = np.concatenate(self.__extracted_features, axis=0)
         all_labels = np.concatenate(self.__extracted_labels, axis=0)
-
+        
         np.save(filepath_base.with_name(filepath_base.name + 'features.npy'), all_features)
         np.save(filepath_base.with_name(filepath_base.name + 'labels.npy'), all_labels)
 
@@ -346,6 +346,11 @@ class Model:
               loss = self.__criterion(outputs, batch_y.unsqueeze(1).float())
               predictions = (torch.sigmoid(outputs) > 0.5).int().squeeze()
             
+            # Save feature vectors during last epoch
+            if epoch == self.__training_hyperparameters._num_epochs - 1:
+              self.__extracted_features.append(features.detach().cpu().numpy())
+              self.__extracted_labels.append(batch_y.detach().cpu().numpy())
+            
             # Backpropagation
             loss.backward()
             self.__optimizer.step()
@@ -369,11 +374,6 @@ class Model:
           # Log metrics
           self.__training_metrics.log(epoch, epoch_loss, precision, recall, f1, auc)
           self.__training_metrics.print_last()
-
-          # Save feature vectors during last epoch
-          if epoch == self.__training_hyperparameters._num_epochs - 1:
-            self.__extracted_features.append(features.detach().cpu().numpy())
-            self.__extracted_labels.append(batch_y.detach().cpu().numpy())
 
         print("\nTraining completed.")        
         # Plot training metrics once training is completed. Use methods from the class TrainingMetrics
