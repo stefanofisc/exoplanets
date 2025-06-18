@@ -1,0 +1,21 @@
+mlp:
+  input_dim: 2560   
+  hidden_layers: [128, 32, 8]
+  output_dim: 2      
+  activation: "ReLU"
+
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  epochs: 50
+  optimizer: "Adam"
+  loss_function: "MeanSquaredError"
+
+dataset:
+  filename_samples: '' # extracted features, by cnn
+  filename_labels: ''  # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
+  filename_dispositions: ''  # extracted labels
+  #model_output_filename: '/home/stefanofiscale/Desktop/exoplanets/dartvetter_cfm-main/data/mlp/combined_dataset/features_2d_dk25-dtey23_training.npy'
+  #model_output_testset_filename: '/home/stefanofiscale/Desktop/exoplanets/dartvetter_cfm-main/data/mlp/combined_dataset/features_2d_dk25-dtey23_test.npy'
+  #training_dispositions_filename: '/home/stefanofiscale/Desktop/exoplanets/dartvetter_cfm-main/data/mlp/combined_dataset/features_2d_dk25-dtey23_training_dispositions.npy'
+  #test_dispositions_filename: '/home/stefanofiscale/Desktop/exoplanets/dartvetter_cfm-main/data/mlp/combined_dataset/features_2d_dk25-dtey23_test_dispositions.npy'

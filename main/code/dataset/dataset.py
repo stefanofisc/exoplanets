@@ -2,6 +2,7 @@ import sys
 import yaml
 import torch
 import pandas as pd
+import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -251,6 +252,120 @@ class Dataset:
 
     def __del__(self):
       print('\nDestructor called for the class Dataset.')
+
+class TensorDataHandler:
+    """
+      Classe che definisce le operazioni comuni da applicare sui tensori.
+      #NOTE. Sviluppo futuro, far ereditare a Dataset i metodi e gli attributi di TensorDataset e verificare la
+              corretta integrazione facendo test sul main di dataset ed in feature_extractor.py. 
+    """
+    def __init__(self):
+      self._X_train = None                     # Training set: PyTorch tensor
+      self._y_train = None
+      self._X_test = None                      # Test set: PyTorch tensor
+      self._y_test = None
+
+    def __print_tensor_shapes(self):
+      """Stampa le dimensioni dei tensori di training e test."""
+      if self._X_train is not None and self._X_test is not None:
+          print('\nShowing train-test tensors shape:')
+          print(f"X_train: {self._X_train.shape}, y_train: {self._y_train.shape}")
+          print(f"X_test:  {self._X_test.shape}, y_test:  {self._y_test.shape}")
+      else:
+          print("\n[!] Tensors have not been generated yet. You should call this method: save_as_tensors().")
+
+    def get_training_test_samples(self):
+      return self._X_train, self._y_train, self._X_test, self._y_test
+    
+    def get_training_data_loader(self, batch_size):
+      """
+        Crea un dataset combinando input e label. Metodo utilizzato dalla classe Model durante il training, per iterare sui campioni.
+        Output:
+          - DataLoader per iterare in batch di size a tua scelta.
+      """
+      train_dataset = TensorDataset(self._X_train, self._y_train)
+      return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
+    
+    def get_test_data_loader(self, batch_size):
+      # Analoso di get_training_data_loader, con test set.
+      test_dataset = TensorDataset(self._X_test, self._y_test)
+      return DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
+
+    def get_training_test_set_length(self, split='train'):
+      if split == 'train':
+        return len(self._X_train)
+      else:
+        return len(self._X_test)
+    
+    def get_training_test_set_labels(self, split='train'):
+      if split == 'train':
+        return self._y_train
+      else:
+        return self._y_test
+
+    def set_x_y_train(self, x_train, y_train):
+      """Inizializza i tensori X_train e y_train da classi figlie"""
+      self._X_train = x_train
+      self._y_train = y_train
+    
+    def set_x_y_test(self, x_test, y_test):
+      self._X_test = x_test
+      self._y_test = y_test
+
+    def __del__(self):
+      print('\nDestructor called for the class TensorDataset')
+
+
+class DatasetMLP(TensorDataset):
+    def __init__(self, dataset_conf, training_conf):
+      """
+        Classe che definisce le operazioni da applicare sui vettori di caratteristiche prima di processarli tramite il MLP.
+        Input:
+          - dataset_conf: oggetto della classe DatasetConfig in mlp_class.py che contiene,
+                      filename_samples: features estratte dalla CNN, in data/features_step1_cnn/
+                      filename_labels: la rappresentazione 2D di queste features, ottenuta con t-SNE. data/features_step2_tsne/
+                      filename_dispositions: le etichette associate ai feature vectors, in data/features_step1_cnn/
+      """
+      super().__init__()
+      self.__config = config
+      self.__x_train_numpy = []
+      self.__y_train_numpy = []
+      self.__x_train_numpy_norm = []
+      self.__y_train_numpy_norm = []
+
+      self.__load_training_data()
+      self.__normalize_data()
+      self.__init_training_tensors()
+      self.__x_train_loader = super().get_training_data_loader(batch_size = training_conf.batch_size)
+      # get training loader for mlp training?
+    
+    def __load_training_data(self):
+      """Carica i numpy array (x_train_numpy, y_train_numpy) da (features_step1_cnn, features_step2_tsne)"""
+      self.__x_train_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / dataset_conf.filename_samples)
+      self.__y_train_numpy = np.load(GlobalPaths.FEATURES_STEP2_TSNE / dataset_conf.filename_labels)
+
+    def __normalize_data(self, normalize_labels = False):
+        """Normalize data to zero mean and unit variance"""
+        epsilon = 1e-8  # offset to improve numerical stability. This prevents division by zero for features with zero std
+        self.__x_train_numpy_norm = (self.__x_train_numpy - self.__x_train_numpy.mean()) / ( self.__x_train_numpy.std() + epsilon )
+        
+        if self.__y_train_numpy is not None and normalize_labels:
+            self.__y_train_numpy_norm = (self.__y_train_numpy - self.__y_train_numpy.mean()) / (self.__y_train_numpy.std() + epsilon)
+        else:
+            self.__y_train_numpy_norm = self.__y_train_numpy
+        
+        #return normalized_samples, normalized_labels
+        
+    def __init_training_tensors(self):
+      """Converti in tensore i dati normalizzati ed inizializza _X_train e _y_train della classe TensorDataHandler"""
+      super().set_x_y_train(
+        torch.tensor(self.__x_train_numpy_norm, dtype=torch.float32),
+        torch.tensor(self.__y_train_numpy_norm, dtype=torch.float32)
+      )
+    
+    def __del__(self):
+      print('\nDestructor called for the class DatasetMLP')
+    
 
 
 def main_dataset_class():

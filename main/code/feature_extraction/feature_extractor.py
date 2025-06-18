@@ -18,12 +18,13 @@ from tqdm import tqdm
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from utils import get_today_string, GlobalPaths
+from utils import get_today_string, GlobalPaths, get_device
 
 sys.path.insert(1, str(GlobalPaths.DATASET))
 from dataset import Dataset
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = get_device()
 print(f"Executing training on {device}")
 
 

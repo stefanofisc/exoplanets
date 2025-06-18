@@ -8,7 +8,7 @@ from ptflops import get_model_complexity_info
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'utils'))
-from utils import GlobalPaths
+from utils import GlobalPaths, get_device
 
 sys.path.insert(1, str(GlobalPaths.FEATURE_EXTRACTION))
 #from m1_class import ModelInspector
@@ -281,12 +281,19 @@ class VGG19(nn.Module):
     return self.__classification_vgg19.forward(input)
   
   # 2025-05-15: run with the conda environment torchcfm_v2
-  def get_vgg19_complexity(self, resnet):
-        with torch.cuda.device(0):
-            macs, params = get_model_complexity_info(resnet, (1, 201), as_strings=True,
-                                           print_per_layer_stat=True, verbose=True)
-            print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
-            print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+  def get_vgg19_complexity(self, vgg):
+    device = get_device()
+
+    # Sposta il modello sul device corretto
+    vgg.to(device)
+
+    # ptflops calcola su CPU: sposta temporaneamente su cpu per evitare errori
+    vgg_cpu = vgg.to("cpu")
+
+    macs, params = get_model_complexity_info(vgg_cpu, (1, 201), as_strings=True,
+                                    print_per_layer_stat=True, verbose=True)
+    print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
+    print('{:<30}  {:<8}'.format('Number of parameters: ', params))
 
 
 def main_vgg():

@@ -23,11 +23,11 @@ dataset_splitting: False
 dataset_save_split_csv: False
 dataset_save_split_tensors: False
 # Opzionale: filename per salvare lo split di training e test
-#train_df_filename: 'TEST_kepler_q1-q17_dr24_multiclass_train_split.csv'
-#test_df_filename: 'TEST_kepler_q1-q17_dr24_multiclass_test_split.csv'
+#train_df_filename: 'tess_tey2023_multiclass_train_split.csv'
+#test_df_filename: 'tess_tey2023_multiclass_test_split.csv'
 # Opzionale: lavora con train-test split in formato TensorDataset. Definisci filenames
-#train_tensor_path: 'TEST_kepler_q1-q17_dr24_multiclass_train_split.pt' # decommenta se dataset_save_split_tensors=True
-#test_tensor_path: 'TEST_kepler_q1-q17_dr24_multiclass_test_split.pt'   # decommenta se dataset_save_split_tensors=True
+#train_tensor_path: 'tess_tey2023_multiclass_train_split.pt' # decommenta se dataset_save_split_tensors=True
+#test_tensor_path: 'tess_tey2023_multiclass_test_split.pt'   # decommenta se dataset_save_split_tensors=True
 
 load_tensors: True
 catalog_name: 'tess_tey23'    # catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23'

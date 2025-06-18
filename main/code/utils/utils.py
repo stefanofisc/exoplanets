@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+import torch
 
 class GlobalPaths:
     # exoplanets/
@@ -24,3 +25,13 @@ def get_today_string():
         Resituisce la data odierna in formato YYYY-MM-DD.
     """
     return datetime.today().strftime('%Y-%m-%d')
+
+def get_device():
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+    
+    return device

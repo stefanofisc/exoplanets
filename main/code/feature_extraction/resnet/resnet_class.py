@@ -10,10 +10,10 @@ from ptflops import get_model_complexity_info
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'utils'))
-from utils import GlobalPaths
+from utils import GlobalPaths, get_device
 
 # Device configuration
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 @dataclass
 class InputVariablesResnet:
@@ -162,11 +162,18 @@ class ResNet(nn.Module):
             nn.init.constant_(m.bias, 0)
     
     def get_resnet_complexity(self, resnet):
-        with torch.cuda.device(0):
-            macs, params = get_model_complexity_info(resnet, (1, 201), as_strings=True,
-                                           print_per_layer_stat=True, verbose=True)
-            print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
-            print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+        device = get_device()
+
+        # Sposta il modello sul device corretto
+        resnet.to(device)
+
+        # ptflops calcola su CPU: sposta temporaneamente su cpu per evitare errori
+        resnet_cpu = resnet.to("cpu")
+
+        macs, params = get_model_complexity_info(resnet_cpu, (1, 201), as_strings=True,
+                                        print_per_layer_stat=True, verbose=True)
+        print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
+        print('{:<30}  {:<8}'.format('Number of parameters: ', params))
 
     def get_feature_extraction_output(self):
         """
@@ -184,6 +191,8 @@ class ResNet(nn.Module):
 
 
 def main_resnet():
+    device = get_device()
+
     # Get hyperparameters
     hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_resnet.yaml')
 
