@@ -1,2 +1,8 @@
 # File di sistema macOS
 .DS_Store
+
+__pycache__/
+*.out
+output_files/
+trained_models/
+data/
