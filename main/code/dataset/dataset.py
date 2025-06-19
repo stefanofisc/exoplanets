@@ -264,15 +264,17 @@ class TensorDataHandler:
       self._y_train = None
       self._X_test = None                      # Test set: PyTorch tensor
       self._y_test = None
+      print('Constructor of TensorDataHandler')
 
-    def __print_tensor_shapes(self):
+    def _print_tensor_shapes(self):
       """Stampa le dimensioni dei tensori di training e test."""
-      if self._X_train is not None and self._X_test is not None:
-          print('\nShowing train-test tensors shape:')
+      if self._X_train is not None and self._y_train is not None:
+          print('\nShowing train tensors shape:')
           print(f"X_train: {self._X_train.shape}, y_train: {self._y_train.shape}")
+      if self._X_test is not None and self._y_test is not None:
           print(f"X_test:  {self._X_test.shape}, y_test:  {self._y_test.shape}")
-      else:
-          print("\n[!] Tensors have not been generated yet. You should call this method: save_as_tensors().")
+      #else:
+      #    print("\n[!] Tensors have not been generated yet. You should call this method: save_as_tensors().")
 
     def get_training_test_samples(self):
       return self._X_train, self._y_train, self._X_test, self._y_test
@@ -316,7 +318,7 @@ class TensorDataHandler:
       print('\nDestructor called for the class TensorDataset')
 
 
-class DatasetMLP(TensorDataset):
+class DatasetMLP(TensorDataHandler):
     def __init__(self, dataset_conf, training_conf):
       """
         Classe che definisce le operazioni da applicare sui vettori di caratteristiche prima di processarli tramite il MLP.
@@ -327,23 +329,30 @@ class DatasetMLP(TensorDataset):
                       filename_dispositions: le etichette associate ai feature vectors, in data/features_step1_cnn/
       """
       super().__init__()
-      self.__config = config
+      print('Constructor of DatasetMLP')
+      self.__dataset_conf = dataset_conf
+      self.__training_conf = training_conf
       self.__x_train_numpy = []
       self.__y_train_numpy = []
       self.__x_train_numpy_norm = []
       self.__y_train_numpy_norm = []
 
-      self.__load_training_data()
-      self.__normalize_data()
-      self.__init_training_tensors()
-      self.__x_train_loader = super().get_training_data_loader(batch_size = training_conf.batch_size)
+      self.__load_training_data()       
+      self.__normalize_data()           
+      self.__init_training_tensors()    
+      self.__x_train_loader = super().get_training_data_loader(batch_size = self.__training_conf.batch_size)
+      super()._print_tensor_shapes()
       # get training loader for mlp training?
+      pass
     
     def __load_training_data(self):
-      """Carica i numpy array (x_train_numpy, y_train_numpy) da (features_step1_cnn, features_step2_tsne)"""
-      self.__x_train_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / dataset_conf.filename_samples)
-      self.__y_train_numpy = np.load(GlobalPaths.FEATURES_STEP2_TSNE / dataset_conf.filename_labels)
-
+      """
+        Carica i numpy.ndarray (x_train_numpy, y_train_numpy) da (features_step1_cnn, features_step2_tsne)
+        Questi vettori consistono in (a) ed (e) della figura in Sezione 2025-06-12 del Google Doc
+      """
+      self.__x_train_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_samples)
+      self.__y_train_numpy = np.load(GlobalPaths.FEATURES_STEP2_TSNE / self.__dataset_conf.filename_labels)
+    
     def __normalize_data(self, normalize_labels = False):
         """Normalize data to zero mean and unit variance"""
         epsilon = 1e-8  # offset to improve numerical stability. This prevents division by zero for features with zero std
@@ -354,14 +363,9 @@ class DatasetMLP(TensorDataset):
         else:
             self.__y_train_numpy_norm = self.__y_train_numpy
         
-        #return normalized_samples, normalized_labels
-        
     def __init_training_tensors(self):
       """Converti in tensore i dati normalizzati ed inizializza _X_train e _y_train della classe TensorDataHandler"""
-      super().set_x_y_train(
-        torch.tensor(self.__x_train_numpy_norm, dtype=torch.float32),
-        torch.tensor(self.__y_train_numpy_norm, dtype=torch.float32)
-      )
+      super().set_x_y_train( torch.tensor(self.__x_train_numpy_norm, dtype=torch.float32), torch.tensor(self.__y_train_numpy_norm, dtype=torch.float32) )
     
     def __del__(self):
       print('\nDestructor called for the class DatasetMLP')

@@ -16,6 +16,10 @@ from sklearn.model_selection import train_test_split
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from utils import GlobalPaths, get_device
 
+sys.path.insert(1, str(Path(__file__).resolve().parent.parent / 'dataset'))
+from dataset import DatasetMLP
+
+
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = get_device()
 
@@ -37,8 +41,8 @@ class TrainingConfig:
 @dataclass
 class DatasetConfig:
     filename_samples: str
-    filename_labels: Optional[str] = None
     filename_dispositions: str
+    filename_labels: Optional[str] = None
 
 @dataclass
 class InputVariablesMLP:
@@ -72,7 +76,6 @@ class MLP(nn.Module):
         self.__model = None                         #ok
         self.__init_model_arch()                    #ok
 
-        pass
         self.__dataset = None
         self.__init_dataset()
 
@@ -112,6 +115,10 @@ class MLP(nn.Module):
         #print(self.__mlp_hyperparameters_object._training.optimizer)
 
     def __init_dataset(self):
+        self.__dataset = DatasetMLP(
+            self.__mlp_hyperparameters_object._dataset, 
+            self.__mlp_hyperparameters_object._training
+            )
         pass
 
     def forward(self, x):
