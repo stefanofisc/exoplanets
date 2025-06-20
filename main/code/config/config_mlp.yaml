@@ -8,8 +8,10 @@ training:
   batch_size: 32
   learning_rate: 0.001
   epochs: 50
-  optimizer: "Adam"
+  optimizer: "adam"
   loss_function: "MeanSquaredError"
+  #weight_decay: 0.0001             # use when optimizer is SGD
+  #momentum: 0.99                   # use when optimizer is SGD
 
 dataset:
   filename_samples: '2025-06-18_vgg_adam_30_tess_tey23_train_features.npy'          # extracted features, by cnn

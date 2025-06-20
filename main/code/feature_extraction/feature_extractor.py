@@ -7,18 +7,18 @@ import numpy as np
 import yaml
 import sys
 import os
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from pandas import read_csv
 from resnet.resnet_class import ResidualBlock, ResNet, InputVariablesResnet
 from vgg.vgg_class import VGG19, InputVariablesVGG19
-from dataclasses import dataclass, field
+from dataclasses import dataclass#, field
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
-from typing import List
+#from typing import List
 from tqdm import tqdm
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from utils import get_today_string, GlobalPaths, get_device
+from utils import get_today_string, GlobalPaths, get_device, TrainingMetrics
 
 sys.path.insert(1, str(GlobalPaths.DATASET))
 from dataset import Dataset
@@ -41,51 +41,6 @@ class ModelInspector:
     for name, param in self.__model.named_parameters():
       print(f"{name:<30} {param.numel():<20}")
 
-@dataclass
-class TrainingMetrics:
-    epochs: List[int] = field(default_factory=list)
-    loss: List[float] = field(default_factory=list)
-    precision: List[float] = field(default_factory=list)
-    recall: List[float] = field(default_factory=list)
-    f1: List[float] = field(default_factory=list)
-    auc_roc: List[float] = field(default_factory=list)
-
-    def log(self, epoch, loss, precision, recall, f1, auc):
-        """Aggiunge i valori di una singola epoca"""
-        self.epochs.append(epoch)
-        self.loss.append(loss)
-        self.precision.append(precision)
-        self.recall.append(recall)
-        self.f1.append(f1)
-        self.auc_roc.append(auc)
-
-    def print_last(self):
-        """Stampa i valori dell’ultima epoca"""
-        print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
-
-    def plot_metrics(self, output_path: str, model_name: str, optimizer: str, num_epochs: int, df_name : str):
-        """
-          Salva i plot delle metriche con un nome file coerente con lo stile:
-          YYYY-MM-DD_<model_name>_<optimizer>_<num_epochs>_<df_name>_<metric>.png
-
-          In questo modo, rendo il formato del filename di output coerente con quello
-          relativo alle caratteristiche estratte, salvate in features_step1_cnn.
-        """
-        os.makedirs(output_path, exist_ok=True)  # crea la directory se non esiste
-        today = get_today_string()
-        metrics = ['loss', 'precision', 'recall', 'f1', 'auc_roc']
-        for metric in metrics:
-            plt.figure(figsize=(8, 5))
-            plt.plot(self.epochs, getattr(self, metric), label=metric)
-            plt.xlabel('Epoch')
-            plt.ylabel(metric.capitalize())
-            plt.title(f'Training {metric.capitalize()} Over Epochs')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            filename = f"{today}_{model_name}_{optimizer}_{num_epochs}_{df_name}_{metric}.png"
-            plt.savefig(os.path.join(output_path, filename), dpi=300)
-            plt.close()
 
 @dataclass
 class InputVariablesModelTraining:
@@ -209,10 +164,10 @@ class Model:
 
     def __init_optimizer(self):
         if self.__training_hyperparameters._optimizer == 'adam':
-          print('\nOptimizer: Adam')
+          #print('\nOptimizer: Adam')
           return optim.Adam(self.__model.parameters(), lr=self.__training_hyperparameters._learning_rate)
         elif self.__training_hyperparameters._optimizer == 'sgd':
-          print('\nOptimizer: SGD')
+          #print('\nOptimizer: SGD')
           return optim.SGD(
             self.__model.parameters(),
             lr = self.__training_hyperparameters._learning_rate,

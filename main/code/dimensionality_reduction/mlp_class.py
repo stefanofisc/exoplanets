@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import yaml
+from tqdm import tqdm
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
@@ -14,7 +15,7 @@ from sklearn.model_selection import train_test_split
 ### end
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from utils import GlobalPaths, get_device
+from utils import GlobalPaths, get_device, TrainingMetrics
 
 sys.path.insert(1, str(Path(__file__).resolve().parent.parent / 'dataset'))
 from dataset import DatasetMLP
@@ -37,6 +38,8 @@ class TrainingConfig:
     epochs: int
     optimizer: str
     loss_function: str
+    weight_decay: Optional[float] = 0.0001
+    momentum: Optional[float] = 0.99
 
 @dataclass
 class DatasetConfig:
@@ -70,15 +73,17 @@ class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
 
-        self.__mlp_hyperparameters_object = None    #ok
-        self.__init_mlp_hyperparameters()           #ok
+        self.__mlp_hyperparameters_object = self.__init_mlp_hyperparameters()
+        self.__training_metrics = TrainingMetrics()
 
-        self.__model = None                         #ok
-        self.__init_model_arch()                    #ok
+        self.__model = self.__init_model_arch()
+        self.__model.to(device)
+        
+        self.__dataset = self.__init_dataset()
 
-        self.__dataset = None
-        self.__init_dataset()
-
+        self.__loss_fn = self.__init_loss()
+        
+        self.__optimizer = self.__init_optimizer()
 
     def __init_model_arch(self):
         # Input variables
@@ -96,7 +101,8 @@ class MLP(nn.Module):
             prev_dim = hidden_dim
         
         layers.append(nn.Linear(prev_dim, output_dim))  # Output layer
-        self.__model = nn.Sequential(*layers)
+        
+        return nn.Sequential(*layers)
 
         """
         self.train_config = train_config
@@ -110,29 +116,100 @@ class MLP(nn.Module):
         """
     
     def __init_mlp_hyperparameters(self):
-        self.__mlp_hyperparameters_object = InputVariablesMLP.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_mlp.yaml')
+        return InputVariablesMLP.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_mlp.yaml')
         #print(self.__mlp_hyperparameters_object._mlp.hidden_layers)
         #print(self.__mlp_hyperparameters_object._training.optimizer)
 
     def __init_dataset(self):
-        self.__dataset = DatasetMLP(
+        """
+            Init the dataset object
+        """
+        return DatasetMLP(
             self.__mlp_hyperparameters_object._dataset, 
             self.__mlp_hyperparameters_object._training
             )
-        pass
 
-    def forward(self, x):
+    def __init_loss(self):
+        """
+            Init the loss function
+        """
+        loss_function = self.__mlp_hyperparameters_object._training.loss_function
+        if loss_function == 'MeanSquaredError':
+            return nn.MSELoss()
+        else:
+            raise ValueError(f'[ERROR] Got {loss_function}, but other loss functions still not available. Please use MeanSquaredError')
+    
+    def __init_optimizer(self):
+        """
+            Init the optimization algorithm.
+            #TODO. Creare classe da cui 'mlp_class/MLP' e 'feature_extractor/Model' ereditano metodi in comune,
+                    che per adesso è solo __init_optimizer
+        """
+        optimizer = self.__mlp_hyperparameters_object._training.optimizer
+        learning_rate = self.__mlp_hyperparameters_object._training.learning_rate
+
+        if optimizer == 'adam':
+            return optim.Adam(self.__model.parameters(), lr=learning_rate)
+        
+        elif optimizer == 'sgd':
+            weight_decay = self.__mlp_hyperparameters_object._training.weight_decay
+            momentum = self.__mlp_hyperparameters_object._training.momentum
+            return optim.SGD(
+                self.__model.parameters(),
+                lr = learning_rate,
+                weight_decay = weight_decay,
+                momentum = momentum
+            )
+        else:
+          raise ValueError(f'Got {optimizer}, but work with Adam and Stochastic Gradient Descent optimizers only.\n Please set adam or sgd to train the model.')
+
+    def __forward(self, x):
         return self.__model(x)
     
+    def __train(self):
+        """
+            Train the MLP
+        """
+        num_epochs = self.__mlp_hyperparameters_object._training.epochs
+        batch_size = self.__mlp_hyperparameters_object._training.batch_size
+        training_set_loader = self.__dataset.get_training_data_loader(batch_size = batch_size)
+
+        for epoch in tqdm(range(num_epochs), desc="[MLP] Training Epochs", unit="epoch"):
+            self.__model.train()    # set the model in training mode
+            running_loss = 0.0
+
+            all_labels = []
+            all_outputs = []
+            all_probs = []
+
+            for batch_x, batch_y in training_set_loader:
+                # As in feature_extractor, batch shape has to be converted to (batch_size, in_channels=1, input_length=L), 
+                # where L is the length of the vgg (or resnet) feature vector.
+                batch_x = batch_x.unsqueeze(1)
+                batch_y = batch_y.unsqueeze(1).float()
+
+                batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+
+                self.__optimizer.zero_grad()
+
+                outputs = self.__forward(batch_x)   # outputs.shape = (batch_size, 1, output_dim=2)
+
+                loss = self.__loss_fn(outputs, batch_y)
+                loss.backward()         # Backpropagation
+                
+                self.__optimizer.step()
+
+                running_loss += loss.item()# * batch_x.size(0)
+            
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss / len(training_set_loader):.4f}")
+
+        
     def main(self):
         print(self.__model)
+        print(self.__optimizer)
+        print(self.__loss_fn)
+        self.__train()
 
-    """
-    def _get_dataset_statistics(self, samples, labels):
-        print("Dataset statistics\n")
-        print(f"mean x: {np.mean(samples)}; mean y: {np.mean(labels)}")
-        print(f"std x: {np.std(samples)}; std y: {np.std(labels)}")
-    """
     
     """
     def __get_samples_labels(self):
@@ -191,7 +268,7 @@ class MLP(nn.Module):
         np.save(filename_dispositions, features_2d_disp)
     """
 
-    """
+    #NOTE TB deleted
     def train_model(self, loss_fn, optimizer, device, epochs):
         self.to(device)
         # get training data
@@ -221,7 +298,7 @@ class MLP(nn.Module):
             print(f"Epoch [{epoch+1}/{epochs}], Loss: {total_loss / len(self.training_set_loader):.4f}")
         # Save model output
         self.__save_model_output(self.__model_output, 'train')
-    """
+
 
     """
     def evaluate(self, device):
