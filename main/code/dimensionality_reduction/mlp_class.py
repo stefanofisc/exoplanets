@@ -3,15 +3,17 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import yaml
+import os
+import numpy as np
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
 ### da rivedere
-from torch.utils.data import DataLoader, TensorDataset
-import numpy as np
-from sklearn.model_selection import train_test_split 
+#from torch.utils.data import DataLoader, TensorDataset
+#from sklearn.model_selection import train_test_split 
 ### end
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
@@ -44,7 +46,7 @@ class TrainingConfig:
 @dataclass
 class DatasetConfig:
     filename_samples: str
-    filename_dispositions: str
+    filename_dispositions: Optional[str] = None #NOTE Remove?
     filename_labels: Optional[str] = None
 
 @dataclass
@@ -84,6 +86,8 @@ class MLP(nn.Module):
         self.__loss_fn = self.__init_loss()
         
         self.__optimizer = self.__init_optimizer()
+
+        self.__projected_features = []
 
     def __init_model_arch(self):
         # Input variables
@@ -178,10 +182,6 @@ class MLP(nn.Module):
             self.__model.train()    # set the model in training mode
             running_loss = 0.0
 
-            all_labels = []
-            all_outputs = []
-            all_probs = []
-
             for batch_x, batch_y in training_set_loader:
                 # Check if batch_x shape is [batch_size, input_dim]. the use of unsqueeze() is unnecessary
                 assert batch_x.ndim == 2, f"[ERROR] Expected 2D input, got {batch_x.ndim}D"
@@ -197,6 +197,9 @@ class MLP(nn.Module):
 
                 outputs = self.__forward(batch_x)   # outputs.shape = (batch_size, output_dim=2)
 
+                if epoch == num_epochs - 1:
+                    self.__projected_features.append(outputs.detach().cpu().numpy())                
+
                 loss = self.__loss_fn(outputs, batch_y)
                 loss.backward()                     # Backpropagation
                 
@@ -207,60 +210,78 @@ class MLP(nn.Module):
             epoch_loss = running_loss / len(training_set_loader)
             self.__training_metrics.log(epoch, epoch_loss)
             self.__training_metrics.print_last()
+        #end training
+    
+    def __save_projected_feature_vectors(self, filename:str):
+        """
+            Salva i vettori di caratteristiche proiettati dal MLP nello spazio 2D durante l'ultima epoca di training
+        """
+        # Define output path
+        filepath_base = (
+            GlobalPaths.FEATURES_STEP2_MLP /
+            f'{filename}.npy'
+        )
+        all_features = np.concatenate(self.__projected_features, axis=0)
+        np.save(filepath_base.with_name(filepath_base.name), all_features)
+
+        print(f'[✓] Features projected by MLP saved to {filepath_base}')      
+    
+    def __save_model(self, filename:str):
+        filepath_base = (
+            GlobalPaths.TRAINED_MODELS /
+            filename
+        )
+        if os.path.exists(filepath_base):
+            print(f'[WARNING] Filename: {filename}, already exists. \nThe model has not been saved to avoid overwriting.')
+        else:
+            torch.save(self.__model.state_dict(), filepath_base)
+            print(f'[✓] Model saved in {filepath_base}')
+
+    def __plot_mlp_representation(self, filename:str):
+        fontsize = 20
+        resolution = 1200
+        labels = self.__dataset.get_dispositions()
+        projection = np.vstack(self.__projected_features)    # To avoid the error: TypeError: list indices must be integers or slices, not tuple
+
+        plt.figure(figsize=(10, 8))
+
+        scatter = plt.scatter(projection[:, 0], projection[:, 1], c=labels, cmap='viridis', alpha=0.7)
+        plt.colorbar(scatter, label='Class Labels')
+
+        plt.xlabel('MLP Dimension 1', fontsize=fontsize)
+        plt.ylabel('MLP Dimension 2', fontsize=fontsize)
+        plt.xticks(fontsize=fontsize)
+        plt.yticks(fontsize=fontsize)
         
-        # Plot loss after training
-        plot_filename = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split('_train')[0]}_loss.png"
-        self.__training_metrics.plot_loss(
-            output_path=str(GlobalPaths.OUTPUT_FILES / 'mlp_training_metrics'),
-            filename = plot_filename
-            )
-        
+        #NOTE. plot_mlp, plot_tsne, plot_cnn_training_metrics, posso inserirli tutti in utils.py
+        filepath_base = (
+            GlobalPaths.OUTPUT_FILES / 'plot_mlp' / 
+            f'{filename}.png'
+          )
+
+        plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
+        plt.close()
+
     def main(self):
         print(self.__model)
-        print(self.__optimizer)
-        print(self.__loss_fn)
         self.__train()
+        
+        # Training completed. Define the filenames for saving plots, features and model
+        prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split('_train')[0]}"
+        filename_features = f'{prefix}_train_features_2d_mlp'
+        filename_model = f'{prefix}_from_scratch_mlp.pt'
+        
+        self.__training_metrics.plot_loss(
+            output_path=str(GlobalPaths.OUTPUT_FILES / 'plot_mlp'),
+            filename = f'{prefix}_loss.png'
+            )                                                       # Plot loss after training
+        
+        self.__plot_mlp_representation(filename_features)           # Plot MLP representation      
+        self.__save_projected_feature_vectors(filename_features)    # Concatenate and save feature vectors and labels
+        self.__save_model(filename_model)                           # Save the model
+
 
     
-    """
-    def __get_samples_labels(self):
-        # Get dataset (split 100%)
-        samples = np.load(self.dataset_config["samples"])
-        labels = np.load(self.dataset_config["labels"])
-        dispostions = np.load(self.dataset_config["dispositions"])
-        
-        self._get_dataset_statistics(samples, labels)
-        # Normalize data to zero mean and unit variance
-        epsilon = 1e-8  # offset to improve numerical stability. This prevents division by zero for features with zero std
-        normalized_samples = (samples - samples.mean()) / ( samples.std() + epsilon )
-        normalized_labels = (labels - labels.mean()) / ( labels.std() + epsilon )
-        self._get_dataset_statistics(normalized_samples, normalized_labels)
-
-        # split dataset into train-test
-        # Qui non uso stratify per bilanciare le classi visto che non è un problema di classificazione ma di encoding supervisionato
-        x_train, x_test, y_train, y_test, d_train, d_test = train_test_split(normalized_samples, normalized_labels, dispostions, test_size=0.2, random_state=42)
-
-        print("Dataset size:\n")
-        print(f"x_train: {x_train.shape}; y_train: {y_train.shape}; d_train: {d_train.shape}")
-        print(f"x_test: {x_test.shape}; y_test: {y_test.shape}; d_test: {d_test.shape}")
-
-        # Convert numpy.ndarray data into torch.Tensor
-        normalized_x_train = torch.tensor(x_train, dtype=torch.float32) # Training
-        normalized_y_train = torch.tensor(y_train, dtype=torch.float32) # Training
-        normalized_x_test = torch.tensor(x_test, dtype=torch.float32) # Test
-        normalized_y_test = torch.tensor(y_test, dtype=torch.float32) # Test
-
-        # Create DataLoader object for training/testing the model
-        training_set = TensorDataset(normalized_x_train, normalized_y_train)
-        test_set = TensorDataset(normalized_x_test, normalized_y_test)
-
-        self.training_set_loader = DataLoader(training_set, batch_size=self.train_config["batch_size"], shuffle=False)
-        self.test_set_loader = DataLoader(test_set, batch_size=self.train_config["batch_size"], shuffle=False)
-        self.training_set_loader_dispositions = d_train     #numpy.ndarray
-        self.test_set_loader_dispositions = d_test
-        #return training_set_loader, test_set_loader
-    """
-
     """
     def __save_model_output(self, output, mode='train'):
         features_2d_array = np.vstack(output)

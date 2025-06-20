@@ -74,7 +74,7 @@ class InputVariablesModelTraining:
             _num_classes=config.get('num_classes', None),
             _weight_decay=config.get('weight_decay', None),   # necessario solo se optimizer = SGD
             _momentum=config.get('momentum', None),           # necessario solo se optimizer = SGD
-            _metrics_output_path=config.get('metrics_output_path', GlobalPaths.OUTPUT_FILES / 'training_metrics'),
+            _metrics_output_path=config.get('metrics_output_path', GlobalPaths.OUTPUT_FILES / 'plot_cnn_training_metrics'),
             _save_model=config.get('save_model', False),
             _purpose=config.get('purpose', 'TBD'),
             _saved_model_name=config.get('saved_model_name', None)

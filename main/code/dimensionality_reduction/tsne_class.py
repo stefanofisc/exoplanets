@@ -101,7 +101,7 @@ class myTSNE:
         plt.yticks(fontsize=fontsize)
 
         filepath_base = (
-            GlobalPaths.OUTPUT_FILES / 'tsne_plot' / 
+            GlobalPaths.OUTPUT_FILES / 'plot_tsne' / 
             f'{self.__output_filename_base}.png'
           )
 

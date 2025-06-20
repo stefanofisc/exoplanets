@@ -334,10 +334,13 @@ class DatasetMLP(TensorDataHandler):
       self.__training_conf = training_conf
       self.__x_train_numpy = []
       self.__y_train_numpy = []
+      self.__disposition_numpy = []
+
       self.__x_train_numpy_norm = []
       self.__y_train_numpy_norm = []
 
-      self.__load_training_data()       
+      self.__load_training_data()
+      self.__load_dispositions()       
       self.__normalize_data()           
       self.__init_training_tensors()    
       super()._print_tensor_shapes()
@@ -351,6 +354,13 @@ class DatasetMLP(TensorDataHandler):
       self.__x_train_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_samples)
       self.__y_train_numpy = np.load(GlobalPaths.FEATURES_STEP2_TSNE / self.__dataset_conf.filename_labels)
     
+    def __load_dispositions(self):
+      """
+        Carica le disposizioni associate ai vettori di caratteristiche. Ricorda che qui x = feature vector,
+        y = feature vector proiettato in spazio 2d (da tsne).
+      """ 
+      self.__disposition_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_dispositions)
+
     def __normalize_data(self, normalize_labels = True):
         """Normalize data to zero mean and unit variance"""
         epsilon = 1e-8  # offset to improve numerical stability. This prevents division by zero for features with zero std
@@ -367,6 +377,9 @@ class DatasetMLP(TensorDataHandler):
     
     def get_training_data_loader(self):
       return super().get_training_data_loader(batch_size = self.__training_conf.batch_size)
+
+    def get_dispositions(self):
+      return self.__disposition_numpy
 
     def __del__(self):
       print('\nDestructor called for the class DatasetMLP')
