@@ -340,10 +340,8 @@ class DatasetMLP(TensorDataHandler):
       self.__load_training_data()       
       self.__normalize_data()           
       self.__init_training_tensors()    
-      self.__x_train_loader = super().get_training_data_loader(batch_size = self.__training_conf.batch_size)
       super()._print_tensor_shapes()
-      # get training loader for mlp training?
-      pass
+      
     
     def __load_training_data(self):
       """
@@ -353,7 +351,7 @@ class DatasetMLP(TensorDataHandler):
       self.__x_train_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_samples)
       self.__y_train_numpy = np.load(GlobalPaths.FEATURES_STEP2_TSNE / self.__dataset_conf.filename_labels)
     
-    def __normalize_data(self, normalize_labels = False):
+    def __normalize_data(self, normalize_labels = True):
         """Normalize data to zero mean and unit variance"""
         epsilon = 1e-8  # offset to improve numerical stability. This prevents division by zero for features with zero std
         self.__x_train_numpy_norm = (self.__x_train_numpy - self.__x_train_numpy.mean()) / ( self.__x_train_numpy.std() + epsilon )
@@ -367,6 +365,9 @@ class DatasetMLP(TensorDataHandler):
       """Converti in tensore i dati normalizzati ed inizializza _X_train e _y_train della classe TensorDataHandler"""
       super().set_x_y_train( torch.tensor(self.__x_train_numpy_norm, dtype=torch.float32), torch.tensor(self.__y_train_numpy_norm, dtype=torch.float32) )
     
+    def get_training_data_loader(self):
+      return super().get_training_data_loader(batch_size = self.__training_conf.batch_size)
+
     def __del__(self):
       print('\nDestructor called for the class DatasetMLP')
     

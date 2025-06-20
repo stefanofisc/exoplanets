@@ -7,7 +7,7 @@ mlp:
 training:
   batch_size: 32
   learning_rate: 0.001
-  epochs: 50
+  epochs: 5
   optimizer: "adam"
   loss_function: "MeanSquaredError"
   #weight_decay: 0.0001             # use when optimizer is SGD

@@ -34,17 +34,38 @@ class TrainingMetrics:
     auc_roc: List[float] = field(default_factory=list)
 
     def log(self, epoch, loss, precision, recall, f1, auc):
-        """Aggiunge i valori di una singola epoca"""
+        """
+            Aggiunge i valori di una singola epoca
+            Task: classificazione
+        """
         self.epochs.append(epoch)
         self.loss.append(loss)
         self.precision.append(precision)
         self.recall.append(recall)
         self.f1.append(f1)
         self.auc_roc.append(auc)
+    
+    def log(self, epoch: int, loss: float):
+        """
+            Registra la loss all'epoca corrente
+            Task: regressione
+        """
+        self.epochs.append(epoch)
+        self.loss.append(loss)
 
     def print_last(self):
-        """Stampa i valori dell’ultima epoca"""
+        """
+            Stampa i valori dell’ultima epoca
+            Task: classificazione
+        """
         print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
+
+    def print_last(self):
+        """
+            Stampa i valori dell’ultima epoca
+            Task: regressione
+        """
+        print(f"[Epoch {self.epochs[-1]}] Loss: {self.loss[-1]:.6f}")
 
     def plot_metrics(self, output_path: str, model_name: str, optimizer: str, num_epochs: int, df_name : str):
         """
@@ -53,6 +74,8 @@ class TrainingMetrics:
 
           In questo modo, rendo il formato del filename di output coerente con quello
           relativo alle caratteristiche estratte, salvate in features_step1_cnn.
+
+          Task: classificazione
         """
         os.makedirs(output_path, exist_ok=True)  # crea la directory se non esiste
         today = get_today_string()
@@ -69,6 +92,28 @@ class TrainingMetrics:
             filename = f"{today}_{model_name}_{optimizer}_{num_epochs}_{df_name}_{metric}.png"
             plt.savefig(os.path.join(output_path, filename), dpi=300)
             plt.close()
+    
+    def plot_loss(self, output_path: str = None, filename: str = None):
+        """
+            Plotta la loss in funzione delle epoche
+            Task: regressione
+        """
+        plt.figure(figsize=(8, 5))
+        plt.plot(self.epochs, self.loss, label='MSE Loss', color='tab:blue')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Training Loss Over Epochs')
+        plt.grid(True)
+        plt.tight_layout()
+        plt.legend()
+
+        if output_path:
+            os.makedirs(output_path, exist_ok=True)
+            path = os.path.join(output_path, filename)
+            plt.savefig(path, dpi=300)
+            print(f"[✓] Loss curve saved to: {path}")
+
+        plt.close()
 
 
 def get_today_string():

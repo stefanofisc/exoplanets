@@ -172,7 +172,7 @@ class MLP(nn.Module):
         """
         num_epochs = self.__mlp_hyperparameters_object._training.epochs
         batch_size = self.__mlp_hyperparameters_object._training.batch_size
-        training_set_loader = self.__dataset.get_training_data_loader(batch_size = batch_size)
+        training_set_loader = self.__dataset.get_training_data_loader()
 
         for epoch in tqdm(range(num_epochs), desc="[MLP] Training Epochs", unit="epoch"):
             self.__model.train()    # set the model in training mode
@@ -183,26 +183,37 @@ class MLP(nn.Module):
             all_probs = []
 
             for batch_x, batch_y in training_set_loader:
-                # As in feature_extractor, batch shape has to be converted to (batch_size, in_channels=1, input_length=L), 
-                # where L is the length of the vgg (or resnet) feature vector.
-                batch_x = batch_x.unsqueeze(1)
-                batch_y = batch_y.unsqueeze(1).float()
+                # Check if batch_x shape is [batch_size, input_dim]. the use of unsqueeze() is unnecessary
+                assert batch_x.ndim == 2, f"[ERROR] Expected 2D input, got {batch_x.ndim}D"
+                assert batch_x.shape[1] == self.__mlp_hyperparameters_object._mlp.input_dim, (
+                f"[ERROR] Expected input dim {self.__mlp_hyperparameters_object._mlp.input_dim}, got {batch_x.shape[1]}"
+                )
+
+                batch_y = batch_y.float()
 
                 batch_x, batch_y = batch_x.to(device), batch_y.to(device)
 
                 self.__optimizer.zero_grad()
 
-                outputs = self.__forward(batch_x)   # outputs.shape = (batch_size, 1, output_dim=2)
+                outputs = self.__forward(batch_x)   # outputs.shape = (batch_size, output_dim=2)
 
                 loss = self.__loss_fn(outputs, batch_y)
-                loss.backward()         # Backpropagation
+                loss.backward()                     # Backpropagation
                 
                 self.__optimizer.step()
 
-                running_loss += loss.item()# * batch_x.size(0)
+                running_loss += loss.item()
             
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss / len(training_set_loader):.4f}")
-
+            epoch_loss = running_loss / len(training_set_loader)
+            self.__training_metrics.log(epoch, epoch_loss)
+            self.__training_metrics.print_last()
+        
+        # Plot loss after training
+        plot_filename = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split('_train')[0]}_loss.png"
+        self.__training_metrics.plot_loss(
+            output_path=str(GlobalPaths.OUTPUT_FILES / 'mlp_training_metrics'),
+            filename = plot_filename
+            )
         
     def main(self):
         print(self.__model)
