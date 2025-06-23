@@ -88,6 +88,7 @@ class MLP(nn.Module):
         self.__optimizer = self.__init_optimizer()
 
         self.__projected_features = []
+        #self.__projected_features_dispositions = []
 
     def __init_model_arch(self):
         # Input variables
@@ -177,12 +178,15 @@ class MLP(nn.Module):
         num_epochs = self.__mlp_hyperparameters_object._training.epochs
         batch_size = self.__mlp_hyperparameters_object._training.batch_size
         training_set_loader = self.__dataset.get_training_data_loader()
+        self.__dataset.set_dispositions(training_set_loader.dataset.tensors[2]) # prendi le dispositions shuffled
 
         for epoch in tqdm(range(num_epochs), desc="[MLP] Training Epochs", unit="epoch"):
             self.__model.train()    # set the model in training mode
             running_loss = 0.0
 
-            for batch_x, batch_y in training_set_loader:
+            for batch_x, batch_y, _ in training_set_loader:
+                # In alternativa:
+                #for batch in training_set_loader: batch_x, batch_y = batch[:2]  # estrai solo X e y
                 # Check if batch_x shape is [batch_size, input_dim]. the use of unsqueeze() is unnecessary
                 assert batch_x.ndim == 2, f"[ERROR] Expected 2D input, got {batch_x.ndim}D"
                 assert batch_x.shape[1] == self.__mlp_hyperparameters_object._mlp.input_dim, (
@@ -198,7 +202,7 @@ class MLP(nn.Module):
                 outputs = self.__forward(batch_x)   # outputs.shape = (batch_size, output_dim=2)
 
                 if epoch == num_epochs - 1:
-                    self.__projected_features.append(outputs.detach().cpu().numpy())                
+                    self.__projected_features.append(outputs.detach().cpu().numpy())        
 
                 loss = self.__loss_fn(outputs, batch_y)
                 loss.backward()                     # Backpropagation
@@ -208,7 +212,7 @@ class MLP(nn.Module):
                 running_loss += loss.item()
             
             epoch_loss = running_loss / len(training_set_loader)
-            self.__training_metrics.log(epoch, epoch_loss)
+            self.__training_metrics.log_loss(epoch, epoch_loss)
             self.__training_metrics.print_last()
         #end training
     
@@ -242,7 +246,7 @@ class MLP(nn.Module):
         resolution = 1200
         labels = self.__dataset.get_dispositions()
         projection = np.vstack(self.__projected_features)    # To avoid the error: TypeError: list indices must be integers or slices, not tuple
-
+        
         plt.figure(figsize=(10, 8))
 
         scatter = plt.scatter(projection[:, 0], projection[:, 1], c=labels, cmap='viridis', alpha=0.7)

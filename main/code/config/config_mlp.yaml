@@ -1,5 +1,5 @@
 mlp:
-  input_dim: 2560   
+  input_dim: 512   
   hidden_layers: [128, 32, 8]
   output_dim: 2      
   activation: "ReLU"
@@ -7,16 +7,16 @@ mlp:
 training:
   batch_size: 256
   learning_rate: 0.001
-  epochs: 100
-  optimizer: "sgd"
+  epochs: 50
+  optimizer: "adam"
   loss_function: "MeanSquaredError"
-  weight_decay: 0.0001             # use when optimizer is SGD
-  momentum: 0.99                   # use when optimizer is SGD
+  #weight_decay: 0.0001             # use when optimizer is SGD
+  #momentum: 0.99                   # use when optimizer is SGD
 
 dataset:
-  filename_samples: '2025-06-18_vgg_adam_30_tess_tey23_train_features.npy'          # extracted features, by cnn
-  filename_labels: '2025-06-18_vgg_adam_30_tess_tey23_train_features_2d_tsne.npy'   # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
-  filename_dispositions: '2025-06-18_vgg_adam_30_tess_tey23_train_labels.npy'       # extracted labels in FEATURES_STEP1_CNN
+  filename_samples: '2025-06-21_resnet_sgd_30_tess_tey23_train_features.npy'          # extracted features, by cnn
+  filename_labels: '2025-06-21_resnet_sgd_30_tess_tey23_train_features_2d_tsne.npy'   # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
+  filename_dispositions: '2025-06-21_resnet_sgd_30_tess_tey23_train_labels.npy'       # extracted labels in FEATURES_STEP1_CNN
   #model_output_filename: '/home/stefanofiscale/Desktop/exoplanets/dartvetter_cfm-main/data/mlp/combined_dataset/features_2d_dk25-dtey23_training.npy'
   #model_output_testset_filename: '/home/stefanofiscale/Desktop/exoplanets/dartvetter_cfm-main/data/mlp/combined_dataset/features_2d_dk25-dtey23_test.npy'
   #training_dispositions_filename: '/home/stefanofiscale/Desktop/exoplanets/dartvetter_cfm-main/data/mlp/combined_dataset/features_2d_dk25-dtey23_training_dispositions.npy'

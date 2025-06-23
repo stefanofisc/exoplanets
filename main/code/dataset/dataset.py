@@ -279,14 +279,30 @@ class TensorDataHandler:
     def get_training_test_samples(self):
       return self._X_train, self._y_train, self._X_test, self._y_test
     
-    def get_training_data_loader(self, batch_size):
+    def get_training_data_loader(self, batch_size, dispositions = None):
       """
         Crea un dataset combinando input e label. Metodo utilizzato dalla classe Model durante il training, per iterare sui campioni.
         Output:
           - DataLoader per iterare in batch di size a tua scelta.
       """
-      train_dataset = TensorDataset(self._X_train, self._y_train)
-      return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
+      if dispositions is not None:
+        assert len(dispositions) == len(self._X_train), "[!] dispositions deve avere la stessa lunghezza di X_train"
+
+        # Shuffle coerente su X, y e dispositions
+        
+        indices = torch.randperm(len(self._X_train))
+        x_shuffled = self._X_train[indices]
+        y_shuffled = self._y_train[indices]
+        dispositions_shuffled = torch.tensor(dispositions, dtype=torch.long)[indices]
+        
+        train_dataset = TensorDataset(x_shuffled, y_shuffled, dispositions_shuffled)
+        
+        #train_dataset = TensorDataset(self._X_train, self._y_train, torch.tensor(dispositions, dtype=torch.long))
+        return DataLoader(train_dataset, batch_size = batch_size, shuffle = False)
+      
+      else:
+        train_dataset = TensorDataset(self._X_train, self._y_train)
+        return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     
     def get_test_data_loader(self, batch_size):
       # Analoso di get_training_data_loader, con test set.
@@ -334,7 +350,7 @@ class DatasetMLP(TensorDataHandler):
       self.__training_conf = training_conf
       self.__x_train_numpy = []
       self.__y_train_numpy = []
-      self.__disposition_numpy = []
+      self.__disposition_array = [] #type dispositions = <class 'torch.Tensor'>
 
       self.__x_train_numpy_norm = []
       self.__y_train_numpy_norm = []
@@ -359,7 +375,7 @@ class DatasetMLP(TensorDataHandler):
         Carica le disposizioni associate ai vettori di caratteristiche. Ricorda che qui x = feature vector,
         y = feature vector proiettato in spazio 2d (da tsne).
       """ 
-      self.__disposition_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_dispositions)
+      self.__disposition_array = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_dispositions)
 
     def __normalize_data(self, normalize_labels = True):
         """Normalize data to zero mean and unit variance"""
@@ -376,10 +392,17 @@ class DatasetMLP(TensorDataHandler):
       super().set_x_y_train( torch.tensor(self.__x_train_numpy_norm, dtype=torch.float32), torch.tensor(self.__y_train_numpy_norm, dtype=torch.float32) )
     
     def get_training_data_loader(self):
-      return super().get_training_data_loader(batch_size = self.__training_conf.batch_size)
+      return super().get_training_data_loader(
+        batch_size = self.__training_conf.batch_size,
+        dispositions = self.__disposition_array
+        )
+
+    def set_dispositions(self, dispositions):
+      self.__disposition_array = dispositions #type dispositions = <class 'torch.Tensor'>
 
     def get_dispositions(self):
-      return self.__disposition_numpy
+      #print(f'[DEBUGGING] get_dispositions(). type disposition_numpy = {type(self.__disposition_array)}')
+      return self.__disposition_array         #type dispositions = <class 'torch.Tensor'>
 
     def __del__(self):
       print('\nDestructor called for the class DatasetMLP')

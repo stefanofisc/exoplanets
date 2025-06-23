@@ -46,7 +46,7 @@ class TrainingMetrics:
         self.f1.append(f1)
         self.auc_roc.append(auc)
     
-    def log(self, epoch: int, loss: float):
+    def log_loss(self, epoch: int, loss: float):
         """
             Registra la loss all'epoca corrente
             Task: regressione
