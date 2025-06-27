@@ -74,14 +74,13 @@ class MLP(nn.Module):
 
         self.__model = self.__init_model_arch()     #ok
         self.__model.to(device)                     #ok
-        print(self.__model)
-        
+
         if self.__mlp_hyperparameters_object._mlp.mode == 'train':
-            self.__training_metrics = TrainingMetrics() #NOTE. To be check: do I need this object in testing mode?
+            self.__training_metrics = TrainingMetrics()
             self.__optimizer = self.__init_optimizer()
             pass
         
-        self.__dataset = self.__init_dataset()      #NOTE. To be check: what changes in testing mode?
+        self.__dataset = self.__init_dataset()      #ok
 
         self.__loss_fn = self.__init_loss()         #ok
         
@@ -134,12 +133,16 @@ class MLP(nn.Module):
         """
             Init the loss function
         """
-        loss_function = self.__mlp_hyperparameters_object._training.loss_function
-        if loss_function == 'MeanSquaredError':
-            return nn.MSELoss()
+        if self.__mlp_hyperparameters_object._mlp.mode == 'train':
+            loss_function = self.__mlp_hyperparameters_object._training.loss_function
+            if loss_function == 'MeanSquaredError':
+                return nn.MSELoss()
+            else:
+                raise ValueError(f'[ERROR] Got {loss_function}, but other loss functions still not available. Please use MeanSquaredError')
         else:
-            raise ValueError(f'[ERROR] Got {loss_function}, but other loss functions still not available. Please use MeanSquaredError')
-    
+            #NOTE. This block of code might change in future implementations whether new loss function would be provided
+            return nn.MSELoss()
+
     def __init_optimizer(self):
         """
             Init the optimization algorithm.
@@ -262,24 +265,43 @@ class MLP(nn.Module):
         plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
         plt.close()
 
-    def main(self):
-        print(self.__model)
-        self.__train()
-        
-        # Training completed. Define the filenames for saving plots, features and model
-        prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split('_train')[0]}"
-        filename_features = f'{prefix}_train_features_2d_mlp'
-        filename_model = f'{prefix}_from_scratch_mlp.pt'
-        
-        self.__training_metrics.plot_loss(
-            output_path=str(GlobalPaths.OUTPUT_FILES / 'plot_mlp'),
-            filename = f'{prefix}_loss.png'
-            )                                                       # Plot loss after training
-        
-        self.__plot_mlp_representation(filename_features)           # Plot MLP representation      
-        self.__save_projected_feature_vectors(filename_features)    # Concatenate and save feature vectors and labels
-        self.__save_model(filename_model)                           # Save the model
+    def __project_features_from_testset(self):
+        # Load the model
+        saved_model_name = self.__mlp_hyperparameters_object._mlp.saved_model_name
+        model_path = GlobalPaths.TRAINED_MODELS / saved_model_name
 
+        if not os.path.exists(model_path):
+            raise ValueError(f'[ERROR] No occurrence found in "trained_models/" for {saved_model_name}.')
+
+        self.__model.load_state_dict(torch.load(model_path, weights_only=True))
+
+        self.__model.eval()
+
+        test_set_loader = self.__dataset.get_test_data_loader()
+
+    def main(self):
+
+        print(self.__model)
+
+        if self.__mlp_hyperparameters_object._mlp.mode == 'train':
+            self.__train()
+            
+            # Training completed. Define the filenames for saving plots, features and model
+            prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split('_train')[0]}"
+            filename_features = f'{prefix}_train_features_2d_mlp'
+            filename_model = f'{prefix}_from_scratch_mlp.pt'
+            
+            self.__training_metrics.plot_loss(
+                output_path=str(GlobalPaths.OUTPUT_FILES / 'plot_mlp'),
+                filename = f'{prefix}_loss.png'
+                )                                                       # Plot loss after training
+            
+            self.__plot_mlp_representation(filename_features)           # Plot MLP representation      
+            self.__save_projected_feature_vectors(filename_features)    # Concatenate and save feature vectors and labels
+            self.__save_model(filename_model)                           # Save the model
+        else:
+            self.__project_features_from_testset()
+            pass
 
     
     """
@@ -299,38 +321,6 @@ class MLP(nn.Module):
         np.save(filename_output, features_2d_array)
         np.save(filename_dispositions, features_2d_disp)
     """
-
-    #NOTE TB deleted
-    def train_model(self, loss_fn, optimizer, device, epochs):
-        self.to(device)
-        # get training data
-        self.__get_samples_labels()
-
-        for epoch in range(epochs):
-            self.train()
-            total_loss = 0
-            
-            #############################################################
-            for inputs, labels in self.training_set_loader:
-                inputs, labels = inputs.to(device), labels.to(device)
-                
-                optimizer.zero_grad()   # Initialize gradients
-                output = self(inputs)   # Feed-forward pass
-                #labels = labels.squeeze() # Remove any additional dimensionality from the data
-                
-                loss = loss_fn(output, labels)
-                loss.backward()         # Backpropagation
-                optimizer.step()
-                total_loss += loss.item() #* inputs.size(0)
-
-                if epoch == epochs - 1:
-                    self.__model_output.append(output.detach().cpu().numpy())
-            #############################################################
-            
-            print(f"Epoch [{epoch+1}/{epochs}], Loss: {total_loss / len(self.training_set_loader):.4f}")
-        # Save model output
-        self.__save_model_output(self.__model_output, 'train')
-
 
     """
     def evaluate(self, device):

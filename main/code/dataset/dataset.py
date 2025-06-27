@@ -305,9 +305,15 @@ class TensorDataHandler:
         train_dataset = TensorDataset(self._X_train, self._y_train)
         return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     
-    def get_test_data_loader(self, batch_size):
-      # Analoso di get_training_data_loader, con test set.
+    def get_test_data_loader_with_labels(self, batch_size = 128):
+      # Analogo di get_training_data_loader, con test set.
+      assert self._y_test is not None, "[!] y_test is None. Cannot create DataLoader with labels."
       test_dataset = TensorDataset(self._X_test, self._y_test)
+      return DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
+    
+    def get_test_data_loader(self, batch_size = 128):
+      # When projecting features from test set with MLP, you don't need self._y_test
+      test_dataset = TensorDataset(self._X_test)
       return DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
 
     def get_training_test_set_length(self, split='train'):
@@ -428,6 +434,9 @@ class DatasetMLP(TensorDataHandler):
         batch_size = self.__training_conf.batch_size,
         dispositions = self.__disposition_array
         )
+    
+    def get_test_data_loader(self):
+      return super().get_test_data_loader()
 
     def set_dispositions(self, dispositions):
       self.__disposition_array = dispositions #type dispositions = <class 'torch.Tensor'>
