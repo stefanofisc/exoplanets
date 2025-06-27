@@ -271,10 +271,11 @@ class TensorDataHandler:
       if self._X_train is not None and self._y_train is not None:
           print('\nShowing train tensors shape:')
           print(f"X_train: {self._X_train.shape}, y_train: {self._y_train.shape}")
-      if self._X_test is not None and self._y_test is not None:
+      if self._X_test is not None:
+        if self._y_test is not None:
           print(f"X_test:  {self._X_test.shape}, y_test:  {self._y_test.shape}")
-      #else:
-      #    print("\n[!] Tensors have not been generated yet. You should call this method: save_as_tensors().")
+        else:
+          print(f"X_test:  {self._X_test.shape}")
 
     def get_training_test_samples(self):
       return self._X_train, self._y_train, self._X_test, self._y_test
@@ -326,7 +327,7 @@ class TensorDataHandler:
       self._X_train = x_train
       self._y_train = y_train
     
-    def set_x_y_test(self, x_test, y_test):
+    def set_x_y_test(self, x_test, y_test = None):
       self._X_test = x_test
       self._y_test = y_test
 
@@ -335,10 +336,11 @@ class TensorDataHandler:
 
 
 class DatasetMLP(TensorDataHandler):
-    def __init__(self, dataset_conf, training_conf):
+    def __init__(self, mode, dataset_conf, training_conf = None):
       """
         Classe che definisce le operazioni da applicare sui vettori di caratteristiche prima di processarli tramite il MLP.
         Input:
+          - mode: train or test
           - dataset_conf: oggetto della classe DatasetConfig in mlp_class.py che contiene,
                       filename_samples: features estratte dalla CNN, in data/features_step1_cnn/
                       filename_labels: la rappresentazione 2D di queste features, ottenuta con t-SNE. data/features_step2_tsne/
@@ -348,49 +350,79 @@ class DatasetMLP(TensorDataHandler):
       print('Constructor of DatasetMLP')
       self.__dataset_conf = dataset_conf
       self.__training_conf = training_conf
-      self.__x_train_numpy = []
-      self.__y_train_numpy = []
-      self.__disposition_array = [] #type dispositions = <class 'torch.Tensor'>
+      self.__mode = mode
 
-      self.__x_train_numpy_norm = []
-      self.__y_train_numpy_norm = []
+      self.__disposition_array = []   # <class 'torch.Tensor'>
 
-      self.__load_training_data()
-      self.__load_dispositions()       
-      self.__normalize_data()           
-      self.__init_training_tensors()    
+      if mode == 'train':
+        # Init data structures for training the MLP
+        self.__x_train_numpy = []
+        self.__x_train_numpy_norm = []
+        self.__y_train_numpy = []       # Store the t-SNE two-dimensional coordinates
+        self.__y_train_numpy_norm = []
+        # Loading and preprocessing
+        self.__load_training_data()
+        self.__normalize_data()
+        self.__init_training_tensors()        
+      else:
+        self.__x_test_numpy = []
+        self.__x_test_numpy_norm = []
+        self.__load_test_data()
+        self.__normalize_data(normalize_labels = False)
+        self.__init_testset_tensors()
+      
+      self.__load_dispositions()
+
       super()._print_tensor_shapes()
       
     
     def __load_training_data(self):
       """
-        Carica i numpy.ndarray (x_train_numpy, y_train_numpy) da (features_step1_cnn, features_step2_tsne)
-        Questi vettori consistono in (a) ed (e) della figura in Sezione 2025-06-12 del Google Doc
+        Carica i numpy.ndarray (self.__x_train_numpy, y_train_numpy) da features_step1_cnn/ e features_step2_tsne/, rispettivamente.
+        Questi vettori consistono in (a) ed (e) della figura in Sezione 2025-06-12 del Google Doc.
       """
       self.__x_train_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_samples)
       self.__y_train_numpy = np.load(GlobalPaths.FEATURES_STEP2_TSNE / self.__dataset_conf.filename_labels)
     
+    def __load_test_data(self):
+      """
+        Carica il numpy.ndarray (self.__x_test_numpy) da features_step1_cnn/.
+        Questo vettore consiste in (c) della figura in Sezione 2025-06-12 del Google Doc.
+      """
+      self.__x_test_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_samples)
+
     def __load_dispositions(self):
       """
-        Carica le disposizioni associate ai vettori di caratteristiche. Ricorda che qui x = feature vector,
-        y = feature vector proiettato in spazio 2d (da tsne).
+        Carica le disposizioni associate ai vettori di caratteristiche. Queste disposizioni corrispondono
+        ai file in features_step1_cnn/ di nome '*_labels.npy'.
+        Ricorda che qui x = feature vector, y = feature vector proiettato in spazio 2d (da tsne).
       """ 
       self.__disposition_array = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_dispositions)
 
     def __normalize_data(self, normalize_labels = True):
-        """Normalize data to zero mean and unit variance"""
+        """
+          Normalize data to zero mean and unit variance
+        """
         epsilon = 1e-8  # offset to improve numerical stability. This prevents division by zero for features with zero std
-        self.__x_train_numpy_norm = (self.__x_train_numpy - self.__x_train_numpy.mean()) / ( self.__x_train_numpy.std() + epsilon )
-        
-        if self.__y_train_numpy is not None and normalize_labels:
-            self.__y_train_numpy_norm = (self.__y_train_numpy - self.__y_train_numpy.mean()) / (self.__y_train_numpy.std() + epsilon)
+        if self.__mode == 'train':
+          self.__x_train_numpy_norm = (self.__x_train_numpy - self.__x_train_numpy.mean()) / (self.__x_train_numpy.std() + epsilon )
+          
+          if self.__y_train_numpy is not None and normalize_labels:
+              self.__y_train_numpy_norm = (self.__y_train_numpy - self.__y_train_numpy.mean()) / (self.__y_train_numpy.std() + epsilon)
+          else:
+              self.__y_train_numpy_norm = self.__y_train_numpy
         else:
-            self.__y_train_numpy_norm = self.__y_train_numpy
+          self.__x_test_numpy_norm = (self.__x_test_numpy - self.__x_test_numpy.mean()) / (self.__x_test_numpy.std() + epsilon)
         
     def __init_training_tensors(self):
       """Converti in tensore i dati normalizzati ed inizializza _X_train e _y_train della classe TensorDataHandler"""
       super().set_x_y_train( torch.tensor(self.__x_train_numpy_norm, dtype=torch.float32), torch.tensor(self.__y_train_numpy_norm, dtype=torch.float32) )
     
+    def __init_testset_tensors(self):
+      """Converti in tensore i dati normalizzati ed inizializza _X_test della classe TensorDataHandler"""
+      super().set_x_y_test( torch.tensor(self.__x_test_numpy_norm, dtype=torch.float32) )
+
+
     def get_training_data_loader(self):
       return super().get_training_data_loader(
         batch_size = self.__training_conf.batch_size,

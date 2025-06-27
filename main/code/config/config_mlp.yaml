@@ -1,9 +1,9 @@
 mlp:
   mode: "test"                     # values: {train, test}
   input_dim: 512                   # NOTE. This value has to be automatically retrieved from input in future implementations
-  #hidden_layers: [128, 32, 8]      
-  #output_dim: 2      
-  #activation: "ReLU"
+  hidden_layers: [128, 32, 8]      
+  output_dim: 2      
+  activation: "ReLU"
   saved_model_name: "2025-06-21_resnet_sgd_30_tess_tey23_from_scratch_mlp.pt"
 
 #training:

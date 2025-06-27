@@ -21,20 +21,20 @@ device = get_device()
 
 @dataclass
 class MLPConfig:
-    mode: str
-    input_dim: int
-    hidden_layers: Optional[List[int]]        #NOTE Ask to GPT
-    output_dim: Optional[int]
-    activation: Optional[str]
-    saved_model_name: Optional[str]
+    mode: str           
+    input_dim: int      
+    hidden_layers: Optional[List[int]] = None
+    output_dim: Optional[int] = 2
+    activation: Optional[str] = 'ReLU'
+    saved_model_name: Optional[str] = None
 
 @dataclass
 class TrainingConfig:
-    batch_size: Optional[int]
-    learning_rate: Optional[float]
-    epochs: Optional[int]
-    optimizer: Optional[str]
-    loss_function: Optional[str]
+    batch_size: Optional[int] = 128
+    learning_rate: Optional[float] = None
+    epochs: Optional[int] = None
+    optimizer: Optional[str] = None
+    loss_function: Optional[str] = 'MeanSquaredError'
     weight_decay: Optional[float] = 0.0001
     momentum: Optional[float] = 0.99
 
@@ -70,18 +70,21 @@ class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
 
-        self.__mlp_hyperparameters_object = self.__init_mlp_hyperparameters()
-        self.__training_metrics = TrainingMetrics() #NOTE. To be check: do I need this object in testing mode?
+        self.__mlp_hyperparameters_object = self.__init_mlp_hyperparameters()   #ok
 
         self.__model = self.__init_model_arch()     #ok
         self.__model.to(device)                     #ok
+        print(self.__model)
+        
+        if self.__mlp_hyperparameters_object._mlp.mode == 'train':
+            self.__training_metrics = TrainingMetrics() #NOTE. To be check: do I need this object in testing mode?
+            self.__optimizer = self.__init_optimizer()
+            pass
         
         self.__dataset = self.__init_dataset()      #NOTE. To be check: what changes in testing mode?
 
         self.__loss_fn = self.__init_loss()         #ok
         
-        self.__optimizer = self.__init_optimizer()  #NOTE. Only for training mode
-
         self.__projected_features = []
 
     def __init_model_arch(self):
@@ -116,14 +119,13 @@ class MLP(nn.Module):
     
     def __init_mlp_hyperparameters(self):
         return InputVariablesMLP.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_mlp.yaml')
-        #print(self.__mlp_hyperparameters_object._mlp.hidden_layers)
-        #print(self.__mlp_hyperparameters_object._training.optimizer)
 
     def __init_dataset(self):
         """
             Init the dataset object
         """
         return DatasetMLP(
+            self.__mlp_hyperparameters_object._mlp.mode,
             self.__mlp_hyperparameters_object._dataset, 
             self.__mlp_hyperparameters_object._training
             )
