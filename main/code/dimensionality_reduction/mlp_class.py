@@ -11,42 +11,37 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
-### da rivedere
-#from torch.utils.data import DataLoader, TensorDataset
-#from sklearn.model_selection import train_test_split 
-### end
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from utils import GlobalPaths, get_device, TrainingMetrics
 
 sys.path.insert(1, str(Path(__file__).resolve().parent.parent / 'dataset'))
 from dataset import DatasetMLP
 
-
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = get_device()
 
 @dataclass
 class MLPConfig:
+    mode: str
     input_dim: int
-    hidden_layers: List[int]
-    output_dim: int
-    activation: str
+    hidden_layers: Optional[List[int]]        #NOTE Ask to GPT
+    output_dim: Optional[int]
+    activation: Optional[str]
+    saved_model_name: Optional[str]
 
 @dataclass
 class TrainingConfig:
-    batch_size: int
-    learning_rate: float
-    epochs: int
-    optimizer: str
-    loss_function: str
+    batch_size: Optional[int]
+    learning_rate: Optional[float]
+    epochs: Optional[int]
+    optimizer: Optional[str]
+    loss_function: Optional[str]
     weight_decay: Optional[float] = 0.0001
     momentum: Optional[float] = 0.99
 
 @dataclass
 class DatasetConfig:
     filename_samples: str
-    filename_dispositions: Optional[str] = None #NOTE Remove?
+    filename_dispositions: Optional[str] = None
     filename_labels: Optional[str] = None
 
 @dataclass
@@ -61,8 +56,8 @@ class InputVariablesMLP:
             config = yaml.safe_load(f)
 
         mlp_conf = MLPConfig(**config['mlp'])
-        training_conf = TrainingConfig(**config['training'])
-        dataset_conf = DatasetConfig(**config['dataset'])
+        training_conf = TrainingConfig(**config.get('training', {}))
+        dataset_conf = DatasetConfig(**config.get('dataset', {}))
 
         return cls(
             _mlp=mlp_conf,
@@ -76,19 +71,18 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
 
         self.__mlp_hyperparameters_object = self.__init_mlp_hyperparameters()
-        self.__training_metrics = TrainingMetrics()
+        self.__training_metrics = TrainingMetrics() #NOTE. To be check: do I need this object in testing mode?
 
-        self.__model = self.__init_model_arch()
-        self.__model.to(device)
+        self.__model = self.__init_model_arch()     #ok
+        self.__model.to(device)                     #ok
         
-        self.__dataset = self.__init_dataset()
+        self.__dataset = self.__init_dataset()      #NOTE. To be check: what changes in testing mode?
 
-        self.__loss_fn = self.__init_loss()
+        self.__loss_fn = self.__init_loss()         #ok
         
-        self.__optimizer = self.__init_optimizer()
+        self.__optimizer = self.__init_optimizer()  #NOTE. Only for training mode
 
         self.__projected_features = []
-        #self.__projected_features_dispositions = []
 
     def __init_model_arch(self):
         # Input variables
@@ -402,48 +396,6 @@ class MLP(nn.Module):
         }
     """
 
-"""
-# Main function to run the pipeline
-def main():
-    # Load configuration
-    config = load_config()
-    
-    # Unpack configuration
-    mlp_config = config["mlp"]
-    train_config = config["training"]
-    dataset_config = config["dataset"]
-
-    #input_dim = eval(str(mlp_config["input_dim"]))
-    input_dim = mlp_config["input_dim"]
-    hidden_layers = mlp_config["hidden_layers"]
-    output_dim = mlp_config["output_dim"]
-    activation = mlp_config["activation"]
-
-    batch_size = train_config["batch_size"]
-    learning_rate = train_config["learning_rate"]
-    epochs = train_config["epochs"]
-    optimizer_name = train_config["optimizer"]
-    loss_function_name = train_config["loss_function"]
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # model summary
-    model = MLP(input_dim, hidden_layers, output_dim, activation, train_config, dataset_config)
-    print("Network Architecture:\n")
-    print(model)
-    
-
-    # Initialize loss function, and optimizer
-    if loss_function_name == "MeanSquaredError":
-        loss_function = nn.MSELoss()
-    else:
-        loss_function = getattr(nn, loss_function_name)()
-    optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=learning_rate)
-
-    # Train the model
-    model.train_model(loss_function, optimizer, device, epochs)
-    model.evaluate(device)
-"""
 
 if __name__ == "__main__":
     mlp = MLP()
