@@ -104,17 +104,6 @@ class MLP(nn.Module):
         layers.append(nn.Linear(prev_dim, output_dim))  # Output layer
         
         return nn.Sequential(*layers)
-
-        """
-        self.train_config = train_config
-        self.dataset_config = dataset_config
-        self.training_set_loader = None
-        self.training_set_loader_dispositions = None    #numpy.ndarray
-        self.test_set_loader = None
-        self.test_set_loader_dispositions = None
-        self.__model_output = []
-        self.__test_set_output = []
-        """
     
     def __init_mlp_hyperparameters(self):
         return InputVariablesMLP.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_mlp.yaml')
@@ -224,6 +213,9 @@ class MLP(nn.Module):
             GlobalPaths.FEATURES_STEP2_MLP /
             f'{filename}.npy'
         )
+        if os.path.exists(filepath_base):
+            raise ValueError(f'[WARNING] Filename: {filename}, already exists. \n Features not saved!')
+
         all_features = np.concatenate(self.__projected_features, axis=0)
         np.save(filepath_base.with_name(filepath_base.name), all_features)
 
@@ -277,18 +269,35 @@ class MLP(nn.Module):
 
         self.__model.eval()
 
-        test_set_loader = self.__dataset.get_test_data_loader()
+        with torch.no_grad():
+            for batch in self.__dataset.get_test_data_loader():
+                # Qui stiamo iterando su un DataLoader che è stato costruito a partire da un TensorDataset 
+                # che contiene un solo tensore, anziché due (x_test,y_test). Per cui la seguente linea
+                # di codice varia leggermente. Ogni elemento di questo DataLoader è una tupla di un solo elemento: (x,).
+                batch_x = batch[0].to(device)
+
+                outputs = self.__forward(batch_x)
+
+                # Store the projected features into a <class 'list'>, where each element is <class 'numpy.ndarray'>
+                self.__projected_features.append(outputs.detach().cpu().numpy())
+
 
     def main(self):
 
         print(self.__model)
 
-        if self.__mlp_hyperparameters_object._mlp.mode == 'train':
+        mode = self.__mlp_hyperparameters_object._mlp.mode
+
+        # Prefix of the filename containing the projected features by MLP
+        prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split(f'_{mode}')[0]}"
+        filename_features = f'{prefix}_{mode}_features_2d_mlp'
+
+        if mode == 'train':
             self.__train()
             
             # Training completed. Define the filenames for saving plots, features and model
-            prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split('_train')[0]}"
-            filename_features = f'{prefix}_train_features_2d_mlp'
+            #NOTE. Remove these two lines if new prefix works. prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split('_train')[0]}"
+            # filename_features = f'{prefix}_train_features_2d_mlp'
             filename_model = f'{prefix}_from_scratch_mlp.pt'
             
             self.__training_metrics.plot_loss(
@@ -296,12 +305,16 @@ class MLP(nn.Module):
                 filename = f'{prefix}_loss.png'
                 )                                                       # Plot loss after training
             
-            self.__plot_mlp_representation(filename_features)           # Plot MLP representation      
-            self.__save_projected_feature_vectors(filename_features)    # Concatenate and save feature vectors and labels
+            #NOTE. Remove
+            #NOTE.self.__plot_mlp_representation(filename_features)           # Plot MLP representation      
+            #NOTE.self.__save_projected_feature_vectors(filename_features)    # Concatenate and save feature vectors and labels
             self.__save_model(filename_model)                           # Save the model
         else:
             self.__project_features_from_testset()
-            pass
+
+        # Code executed in both modes train and test
+        self.__plot_mlp_representation(filename_features)           # Plot MLP representation      
+        self.__save_projected_feature_vectors(filename_features)    # Concatenate and save feature vectors and labels
 
     
     """
