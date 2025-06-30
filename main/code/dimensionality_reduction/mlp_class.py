@@ -204,23 +204,32 @@ class MLP(nn.Module):
             self.__training_metrics.print_last()
         #end training
     
-    def __save_projected_feature_vectors(self, filename:str):
+    def __save_projected_feature_vectors(self, filename_features:str, filename_labels:str):
         """
             Salva i vettori di caratteristiche proiettati dal MLP nello spazio 2D durante l'ultima epoca di training
         """
         # Define output path
-        filepath_base = (
+        filepath_features_base = (
             GlobalPaths.FEATURES_STEP2_MLP /
-            f'{filename}.npy'
+            f'{filename_features}.npy'
         )
-        if os.path.exists(filepath_base):
-            raise ValueError(f'[WARNING] Filename: {filename}, already exists. \n Features not saved!')
+        filepath_labels_base = (
+            GlobalPaths.FEATURES_STEP2_MLP /
+            f'{filename_labels}.npy'
+        )
+        if os.path.exists(filepath_features_base):
+            raise ValueError(f'[WARNING] Filename: {filename_features}, already exists. \n Features not saved!')
 
         all_features = np.concatenate(self.__projected_features, axis=0)
-        np.save(filepath_base.with_name(filepath_base.name), all_features)
+        all_labels = self.__dataset.get_dispositions()
+        if len(all_features) != len(all_labels):
+            raise ValueError(f'[WARNING] In saving <features_2d,labels>, mismatch in length. len(all_features)={len(all_features)}, len(all_labels)={len(all_labels)}')
 
-        print(f'[✓] Features projected by MLP saved to {filepath_base}')      
-    
+        np.save(filepath_features_base.with_name(filepath_features_base.name), all_features)
+        np.save(filepath_labels_base.with_name(filepath_labels_base.name), all_labels)
+
+        print(f'[✓] <Features,Labels> projected by MLP saved to {filepath_features_base} and {filepath_labels_base}')
+  
     def __save_model(self, filename:str):
         filepath_base = (
             GlobalPaths.TRAINED_MODELS /
@@ -291,6 +300,7 @@ class MLP(nn.Module):
         # Prefix of the filename containing the projected features by MLP
         prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split(f'_{mode}')[0]}"
         filename_features = f'{prefix}_{mode}_features_2d_mlp'
+        filename_labels = f'{prefix}_{mode}_labels_2d_mlp'
 
         if mode == 'train':
             self.__train()
@@ -303,103 +313,18 @@ class MLP(nn.Module):
             self.__training_metrics.plot_loss(
                 output_path=str(GlobalPaths.OUTPUT_FILES / 'plot_mlp'),
                 filename = f'{prefix}_loss.png'
-                )                                                       # Plot loss after training
+                )                                                           # Plot loss after training
             
             #NOTE. Remove
-            #NOTE.self.__plot_mlp_representation(filename_features)           # Plot MLP representation      
-            #NOTE.self.__save_projected_feature_vectors(filename_features)    # Concatenate and save feature vectors and labels
-            self.__save_model(filename_model)                           # Save the model
+            #NOTE.self.__plot_mlp_representation(filename_features)         # Plot MLP representation      
+            #NOTE.self.__save_projected_feature_vectors(filename_features)  # Concatenate and save feature vectors and labels
+            self.__save_model(filename_model)                               # Save the model
         else:
             self.__project_features_from_testset()
 
         # Code executed in both modes train and test
-        self.__plot_mlp_representation(filename_features)           # Plot MLP representation      
-        self.__save_projected_feature_vectors(filename_features)    # Concatenate and save feature vectors and labels
-
-    
-    """
-    def __save_model_output(self, output, mode='train'):
-        features_2d_array = np.vstack(output)
-        print(f"features shape: {features_2d_array.shape}")
-
-        if mode=='train':
-            filename_output = self.dataset_config["model_output_filename"]                  # coordinate 2D delle features prodotte dal MLP
-            filename_dispositions = self.dataset_config["training_dispositions_filename"]   # etichetta del punto: {AFP, NTP, ecc...}
-            features_2d_disp = np.vstack(self.training_set_loader_dispositions)
-        else:
-            filename_output = self.dataset_config["model_output_testset_filename"]
-            filename_dispositions = self.dataset_config["test_dispositions_filename"]
-            features_2d_disp = np.vstack(self.test_set_loader_dispositions)
-        
-        np.save(filename_output, features_2d_array)
-        np.save(filename_dispositions, features_2d_disp)
-    """
-
-    """
-    def evaluate(self, device):
-        self.to(device)
-        
-        # Initialize metrics
-        total_loss = 0
-        predictions = []
-        actual = []
-        
-        # Define loss function (same as used in training)
-        loss_fn = nn.MSELoss()
-        
-        with torch.no_grad():  # No need to track gradients during evaluation
-            for inputs, labels in self.test_set_loader:
-                inputs, labels = inputs.to(device), labels.to(device)
-                
-                # Forward pass
-                outputs = self(inputs)
-                
-                # Calculate loss
-                loss = loss_fn(outputs, labels)
-                total_loss += loss.item()
-                
-                # Store predictions and actual values
-                predictions.append(outputs.cpu().numpy())
-                actual.append(labels.cpu().numpy())
-
-                self.__test_set_output = predictions
-        self.__save_model_output(self.__test_set_output, 'test')
-
-        # Calculate average loss
-        avg_loss = total_loss / len(self.test_set_loader)
-        
-        # Concatenate batches
-        all_predictions = np.concatenate(predictions)
-        all_actual = np.concatenate(actual)
-        
-        # Calculate metrics
-        mse = np.mean((all_predictions - all_actual) ** 2)
-        rmse = np.sqrt(mse)
-        mae = np.mean(np.abs(all_predictions - all_actual))
-        
-        # Calculate R² (coefficient of determination)
-        ss_total = np.sum((all_actual - np.mean(all_actual)) ** 2)
-        ss_residual = np.sum((all_actual - all_predictions) ** 2)
-        r_squared = 1 - (ss_residual / ss_total)
-        
-        # Print evaluation results
-        print("\nTest Set Evaluation:")
-        print(f"Average Loss: {avg_loss:.4f}")
-        print(f"MSE: {mse:.4f}")
-        print(f"RMSE: {rmse:.4f}")
-        print(f"MAE: {mae:.4f}")
-        print(f"R² Score: {r_squared:.4f}")
-        
-        return {
-            "loss": avg_loss,
-            "mse": mse,
-            "rmse": rmse, 
-            "mae": mae,
-            "r_squared": r_squared,
-            "predictions": all_predictions,
-            "actual": all_actual
-        }
-    """
+        self.__plot_mlp_representation(filename_features)                   # Plot MLP representation      
+        self.__save_projected_feature_vectors(filename_features, filename_labels)   # Concatenate and save feature vectors and labels
 
 
 if __name__ == "__main__":

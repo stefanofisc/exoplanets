@@ -7,13 +7,13 @@ mlp:
   saved_model_name: "2025-06-21_resnet_sgd_30_tess_tey23_from_scratch_mlp.pt"
 
 #training:
-  #batch_size: 256
-  #learning_rate: 0.001
-  #epochs: 100
-  #optimizer: "adam"
-  #loss_function: "MeanSquaredError"
-  #weight_decay: 0.0001             # use when optimizer is SGD
-  #momentum: 0.99                   # use when optimizer is SGD
+#  batch_size: 256
+#  learning_rate: 0.001
+#  epochs: 150
+#  optimizer: "sgd"
+#  loss_function: "MeanSquaredError"
+#  weight_decay: 0.0001             # use when optimizer is SGD
+#  momentum: 0.99                   # use when optimizer is SGD
 
 dataset:
   filename_samples: '2025-06-21_resnet_sgd_30_tess_tey23_test_features.npy'          # extracted features, by cnn
