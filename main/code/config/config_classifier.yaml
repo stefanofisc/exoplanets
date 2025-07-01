@@ -3,7 +3,7 @@ classifier:
   model: 'svm'      # 'svm', 'lda', 'qda'
   #saved_model_name: '' # name of the trained model to load in order to assess its predictive performance
   # SVM specific parameter
-  kernel: 'linear'  # 'linear', 'rbf' #NOTE Check if rbf keyword is correct
+  kernel: 'linear'  # 'linear', 'rbf'
   C: 1.0
   gamma: 'scale'
   decision_function_shape: 'ovo'

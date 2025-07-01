@@ -1,6 +1,6 @@
 import sys
 import yaml
-#import os
+import os
 import numpy as np
 from dataclasses import dataclass
 from pathlib import Path
@@ -59,20 +59,21 @@ class Classifier:
     def __init__(self):
         """Constructor of the class Classifier""" 
         self.__classifier_hyperparameters_object = self.__init_classifier_hyperparameters()
-        
-        self.__model = self.__init_model_arch()
-        print(self.__model)
-        #NOTE. Seems support vector machine doesn't run on gpu
-        #self.__model.to(device)
 
         self.__dataset = self.__init_dataset()
 
-        if self.__classifier_hyperparameters_object._classifier.mode == 'train':
+        self.__model = self.__init_model_arch()
+        print(self.__model)
+
+        self.__training_metrics = TrainingMetrics()
+
+        #NOTE. Seems support vector machine doesn't run on gpu
+        #self.__model.to(device)
+
+        #if self.__classifier_hyperparameters_object._classifier.mode == 'train':
             #NOTE. Do something different?
-            pass
+        #    pass
         
-        print('ending constructor classifier')
-        pass
     
     def __init_classifier_hyperparameters(self):
         return InputVariablesClassifier.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_classifier.yaml')
@@ -84,7 +85,7 @@ class Classifier:
                 kernel          = self.__classifier_hyperparameters_object._classifier.kernel, 
                 C               = self.__classifier_hyperparameters_object._classifier.C, 
                 gamma           = self.__classifier_hyperparameters_object._classifier.gamma, 
-                #class_weight    = self.__compute_class_weights(),  #NOTE. Decomment when DatasetClassifier is ready
+                class_weight    = self.__compute_class_weights(),
                 decision_function_shape = self.__classifier_hyperparameters_object._classifier.decision_function_shape
             )
 
@@ -103,16 +104,12 @@ class Classifier:
             raise ValueError(f'In class Classifier, type of model. Got {model}, but models available are: svm, qda, lda.')
 
     def __compute_class_weights(self):
-        pass
-        """
-        #NOTE. Decomment when DatasetClassifier object is available. You need to access to y_train to compute class weights
         #Calcola i pesi delle classi con Inverse Frequency Method
-        unique_classes  = np.unique(self._y_train)
-        class_weights   = compute_class_weight('balanced', classes=unique_classes, y=self._y_train.ravel()) # class_weights: numpy.ndarray
+        unique_classes  = np.unique(self.__dataset.get_y_train())
+        class_weights   = compute_class_weight('balanced', classes=unique_classes, y=self.__dataset.get_y_train().ravel()) # class_weights: numpy.ndarray
         print(f"Classes values: {unique_classes}")
         print(f"Class weights values: {class_weights}")
         return dict(zip(unique_classes, class_weights))
-        """
 
     def __init_dataset(self):
         return DatasetClassifier(
@@ -120,30 +117,114 @@ class Classifier:
         )
 
     def __train(self):
-        pass
-        """
-        #NOTE. Decomment when DatasetClassifier object is available and allows you to access data.
-        #Train the classifier
+        """Train the classifier"""
+        x_train, y_train, _, _ = self.__dataset.get_training_test_samples()
         try:
-            self.__model.fit(self._x_train, self._y_train)
+            self.__model.fit(x_train, y_train)
         except Exception as e1:
             print(f'In class Classifier, __train(). Error: {e1}')
         
         print("Training completed")
-        """
     
+    def __save_model(self, filename:str):
+        """Save the trained model"""
+        filepath_base = (
+            GlobalPaths.TRAINED_MODELS /
+            f'{filename}.pt'
+        )
+        if os.path.exists(filepath_base):
+            print(f'[WARNING] Filename: {filename}, already exists. \nThe model has not been saved to avoid overwriting.')
+        else:
+            torch.save(self.__model.state_dict(), filepath_base)
+            print(f'[✓] Model saved in {filepath_base}')
+
     def __evaluate(self):
-        """
-        #NOTE. Decomment this method when DatasetClassifier is available
-        # Model assessment on test set
-        self.__plot_decision_boundary()
-        y_pred = self.__model.predict(self._x_test)
-        self._metric_tracker.compute_evaluation_metrics(y_pred, y_pred, self._y_test)   #NOTE. To be changed in TrainingMetrics. Ask to GPT
-        """
-    
-    def __plot_decision_boundary(self):
-        pass
+        """Model assessment"""
+        _, _, x_test, y_test = self.__dataset.get_training_test_samples()
+
+        y_pred = self.__model.predict(x_test)
+        y_proba = self.__model.predict_proba(x_test) if hasattr(self.__model, "predict_proba") else None
+
+        self.__training_metrics.compute_and_log_classification_metrics(
+            y_true = y_test,
+            y_pred = y_pred,
+            y_proba = y_proba,
+            epoch = 0,
+            loss = 0.0,
+            model_supports_proba = hasattr(self.__model, "predict_proba")
+        )
+
+        self.__plot_decision_boundary(output_plot = self.__define_output_plot_filename())
+
+    def __plot_decision_boundary(self, output_plot):
+        _, _, x_test, y_test = self.__dataset.get_training_test_samples()
+        
+        plot_method="pcolormesh" #contour
+
+        ax = plt.gca()
+
+        wdisp = DecisionBoundaryDisplay.from_estimator(
+            self.__model,
+            x_test,
+            plot_method=plot_method,
+            #colors="r",
+            #levels=[0],
+            #alpha=0.5,
+            #linestyles=["-"],
+            shading="auto",
+            response_method="predict",
+            ax=ax,
+        )
+        plt.scatter(x_test[:, 0], x_test[:, 1], c=y_test, cmap=plt.cm.Paired, edgecolors="k")
+        plt.savefig(output_plot.with_name(output_plot.name), dpi=1200)
+        plt.close()
+
+    def __define_model_filename(self):
+        model = self.__classifier_hyperparameters_object._classifier.model
+        prefix = str(self.__classifier_hyperparameters_object._dataset.filename_samples).split('_train')[0]
+        
+        if model = 'svm':
+            kernel = self.__classifier_hyperparameters_object._classifier.kernel
+            filename = f'{prefix}_{model}_{kernel}'
+        
+        elif model = 'lda' or model == 'qda':
+            solver = self.__classifier_hyperparameters_object._classifier.solver
+            filename = f'{prefix}_{model}_{solver}'
+        
+        else:
+            raise ValueError(f'In defining output plot filename. Got {model}, when expected svm, lda or qda')
+
+        return filename
+
+    def __define_output_plot_filename(self):
+        model = self.__classifier_hyperparameters_object._classifier.model
+        prefix = str(self.__classifier_hyperparameters_object._dataset.filename_samples).split('_test')[0]
+
+        if model = 'svm':
+            kernel = self.__classifier_hyperparameters_object._classifier.kernel
+            filename = f'{prefix}_{model}_{kernel}.png'
+        
+        elif model = 'lda' or model == 'qda':
+            solver = self.__classifier_hyperparameters_object._classifier.solver
+            filename = f'{prefix}_{model}_{solver}.png'
+        
+        else:
+            raise ValueError(f'In defining output plot filename. Got {model}, when expected svm, lda or qda')
+
+        return filepath_output = (
+            GlobalPaths.OUTPUT_FILES / f'plot_{model}' /
+            filename
+        )
+
+    def main(self):
+        if self.__classifier_hyperparameters_object._classifier.mode == 'train':
+            self.__train()
+            self.__save_model(self.__define_model_filename())
+        
+        elif self.__classifier_hyperparameters_object._classifier.mode == 'test':
+            #NOTE. TODO. Carica il modello prima di testarlo
+            self.__evaluate()
 
 if __name__ == '__main__':
-    print('classifier module')
     classifier = Classifier()
+    classifier.main()

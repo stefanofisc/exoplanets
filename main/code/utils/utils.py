@@ -5,6 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List
+from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
+
 
 class GlobalPaths:
     # exoplanets/
@@ -116,6 +118,24 @@ class TrainingMetrics:
 
         plt.close()
 
+    def compute_and_log_classification_metrics(self, y_true, y_pred, y_proba=None, epoch=0, loss=0.0, model_supports_proba=False):
+        """
+            Calcola le metriche di classificazione (precision, recall, f1, auc) e le salva.
+        """
+        precision = precision_score(y_true, y_pred, average='macro', zero_division=0)
+        recall = recall_score(y_true, y_pred, average='macro', zero_division=0)
+        f1 = f1_score(y_true, y_pred, average='macro', zero_division=0)
+
+        # Calcolo AUC se possibile
+        auc = 0.0
+        if model_supports_proba and y_proba is not None:
+            try:
+                auc = roc_auc_score(y_true, y_proba, multi_class='ovr')
+            except:
+                auc = 0.0
+
+        self.log(epoch=epoch, loss=loss, precision=precision, recall=recall, f1=f1, auc=auc)
+        self.print_last()
 
 def get_today_string():
     """
