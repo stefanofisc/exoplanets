@@ -70,19 +70,19 @@ class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
 
-        self.__mlp_hyperparameters_object = self.__init_mlp_hyperparameters()   #ok
+        self.__mlp_hyperparameters_object = self.__init_mlp_hyperparameters()
 
-        self.__model = self.__init_model_arch()     #ok
-        self.__model.to(device)                     #ok
+        self.__model = self.__init_model_arch()
+        self.__model.to(device)
 
         if self.__mlp_hyperparameters_object._mlp.mode == 'train':
             self.__training_metrics = TrainingMetrics()
             self.__optimizer = self.__init_optimizer()
             pass
         
-        self.__dataset = self.__init_dataset()      #ok
+        self.__dataset = self.__init_dataset()
 
-        self.__loss_fn = self.__init_loss()         #ok
+        self.__loss_fn = self.__init_loss()
         
         self.__projected_features = []
 

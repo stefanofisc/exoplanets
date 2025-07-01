@@ -421,11 +421,11 @@ class DatasetMLP(TensorDataHandler):
           self.__x_test_numpy_norm = (self.__x_test_numpy - self.__x_test_numpy.mean()) / (self.__x_test_numpy.std() + epsilon)
         
     def __init_training_tensors(self):
-      """Converti in tensore i dati normalizzati ed inizializza _X_train e _y_train della classe TensorDataHandler"""
+      """Converti in tensore i dati normalizzati ed inizializza (_X_train, _y_train) della classe TensorDataHandler"""
       super().set_x_y_train( torch.tensor(self.__x_train_numpy_norm, dtype=torch.float32), torch.tensor(self.__y_train_numpy_norm, dtype=torch.float32) )
     
     def __init_testset_tensors(self):
-      """Converti in tensore i dati normalizzati ed inizializza _X_test della classe TensorDataHandler"""
+      """Converti in tensore i dati normalizzati ed inizializza (_X_test) della classe TensorDataHandler"""
       super().set_x_y_test( torch.tensor(self.__x_test_numpy_norm, dtype=torch.float32) )
 
 
@@ -448,6 +448,63 @@ class DatasetMLP(TensorDataHandler):
     def __del__(self):
       print('\nDestructor called for the class DatasetMLP')
     
+
+class DatasetClassifier(TensorDataHandler):
+    def __init__(self, classifier_hyperparameters_object):
+      super().__init__()
+
+      self.__dataset_conf = classifier_hyperparameters_object._dataset
+
+      if classifier_hyperparameters_object._classifier.mode == 'train':
+        self.__x_train_numpy = []
+        self.__y_train_numpy = []
+
+        self.__load_training_data()
+        self.__init_training_tensors()
+      
+      elif classifier_hyperparameters_object._classifier.mode == 'test':
+        self.__x_test_numpy = []
+        self.__y_test_numpy = []
+
+        self.__load_test_data()
+        self.__init_testset_tensors()
+      
+      else:
+        raise ValueError(f'In DatasetClassifier, mode. Got {classifier_hyperparameters_object._classifier.mode}, but expect "train" or "test"')
+
+      super()._print_tensor_shapes()
+
+    def __load_training_data(self):
+      """
+        Carica i numpy.ndarray (self.__x_train_numpy, y_train_numpy) da features_step2_mlp/.
+      """
+      self.__x_train_numpy = np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_samples)
+      self.__y_train_numpy = np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_labels)
+    
+    def __load_test_data(self):
+      """
+        Carica il numpy.ndarray (self.__x_test_numpy) da features_step1_cnn/.
+        Questo vettore consiste in (c) della figura in Sezione 2025-06-12 del Google Doc.
+      """
+      self.__x_test_numpy = np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_samples)
+      self.__y_test_numpy = np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_labels)
+
+    def __init_training_tensors(self):
+      """Converti in tensore il training set ed inizializza (_X_train, _y_train) della classe TensorDataHandler"""
+      super().set_x_y_train( 
+        torch.tensor(self.__x_train_numpy, dtype=torch.float32), 
+        torch.tensor(self.__y_train_numpy, dtype=torch.long) 
+      )
+    
+    def __init_testset_tensors(self):
+      """Converti in tensore il test set ed inizializza (_X_test, _y_test) della classe TensorDataHandler"""
+      super().set_x_y_test( 
+        torch.tensor(self.__x_test_numpy, dtype=torch.float32),
+        torch.tensor(self.__y_test_numpy, dtype=torch.long)
+        )
+    
+    def __del__(self):
+      print('\nDestructor called for the class DatasetMLP')
 
 
 def main_dataset_class():
