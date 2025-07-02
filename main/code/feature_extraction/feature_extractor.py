@@ -329,7 +329,7 @@ class Model:
 
           # Log metrics
           self.__training_metrics.log(epoch, epoch_loss, precision, recall, f1, auc)
-          self.__training_metrics.print_last()
+          self.__training_metrics.print_last_classification()
 
         print("\nTraining completed.")        
         # Plot training metrics once training is completed. Use methods from the class TrainingMetrics

@@ -201,7 +201,7 @@ class MLP(nn.Module):
             
             epoch_loss = running_loss / len(training_set_loader)
             self.__training_metrics.log_loss(epoch, epoch_loss)
-            self.__training_metrics.print_last()
+            self.__training_metrics.print_last_regression()
         #end training
     
     def __save_projected_feature_vectors(self, filename_features:str, filename_labels:str):

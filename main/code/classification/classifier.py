@@ -2,6 +2,7 @@ import sys
 import yaml
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -9,6 +10,7 @@ from sklearn.svm import SVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.utils.class_weight import compute_class_weight
+from joblib import dump, load
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from utils import GlobalPaths, TrainingMetrics #get_device
@@ -31,7 +33,8 @@ class ClassifierConfig:
     # LDA, QDA specific parameters
     solver: Optional[str] = None
     shrinkage: Optional[str] = None # NOTE. As this parameter could assume None, 'auto' or a float value in [0,1], please convert it in float when necessary
-
+    n_components: Optional[int] = 2
+    
 @dataclass
 class DatasetConfig:
     filename_samples: str
@@ -62,17 +65,17 @@ class Classifier:
 
         self.__dataset = self.__init_dataset()
 
-        self.__model = self.__init_model_arch()
-        print(self.__model)
+        if self.__classifier_hyperparameters_object._classifier.mode == 'train':
+            # Init model arch when in training mode. 
+            # Test mode: you don't need this initialization as the model will be loaded in self.__load_model().
+            #            Otherwise, this istance will be overwrited and it is just a waste of computational time.
+            self.__model = self.__init_model_arch()
+            print(self.__model)
 
         self.__training_metrics = TrainingMetrics()
 
         #NOTE. Seems support vector machine doesn't run on gpu
         #self.__model.to(device)
-
-        #if self.__classifier_hyperparameters_object._classifier.mode == 'train':
-            #NOTE. Do something different?
-        #    pass
         
     
     def __init_classifier_hyperparameters(self):
@@ -130,13 +133,27 @@ class Classifier:
         """Save the trained model"""
         filepath_base = (
             GlobalPaths.TRAINED_MODELS /
-            f'{filename}.pt'
+            f'{filename}.joblib'
         )
         if os.path.exists(filepath_base):
             print(f'[WARNING] Filename: {filename}, already exists. \nThe model has not been saved to avoid overwriting.')
         else:
-            torch.save(self.__model.state_dict(), filepath_base)
+            dump(self.__model, filepath_base)
             print(f'[✓] Model saved in {filepath_base}')
+
+    def __load_model(self, filename:str):
+        """
+            Load the trained model.
+            Input:
+                - filename: filename of the model. You need to specify the extension .joblib, but not the full path.
+                            The full path will be automatically determined, as it is stored into GlobalPaths.TRAINED_MODELS
+        """
+        filepath_base = (
+            GlobalPaths.TRAINED_MODELS / 
+            f'{filename}'
+        )
+        print(f'[DEBUGGINB] Loading model from: {filepath_base}')
+        return load(filepath_base)
 
     def __evaluate(self):
         """Model assessment"""
@@ -183,11 +200,11 @@ class Classifier:
         model = self.__classifier_hyperparameters_object._classifier.model
         prefix = str(self.__classifier_hyperparameters_object._dataset.filename_samples).split('_train')[0]
         
-        if model = 'svm':
+        if model == 'svm':
             kernel = self.__classifier_hyperparameters_object._classifier.kernel
             filename = f'{prefix}_{model}_{kernel}'
         
-        elif model = 'lda' or model == 'qda':
+        elif model == 'lda' or model == 'qda':
             solver = self.__classifier_hyperparameters_object._classifier.solver
             filename = f'{prefix}_{model}_{solver}'
         
@@ -200,18 +217,18 @@ class Classifier:
         model = self.__classifier_hyperparameters_object._classifier.model
         prefix = str(self.__classifier_hyperparameters_object._dataset.filename_samples).split('_test')[0]
 
-        if model = 'svm':
+        if model == 'svm':
             kernel = self.__classifier_hyperparameters_object._classifier.kernel
             filename = f'{prefix}_{model}_{kernel}.png'
         
-        elif model = 'lda' or model == 'qda':
+        elif model == 'lda' or model == 'qda':
             solver = self.__classifier_hyperparameters_object._classifier.solver
             filename = f'{prefix}_{model}_{solver}.png'
         
         else:
             raise ValueError(f'In defining output plot filename. Got {model}, when expected svm, lda or qda')
 
-        return filepath_output = (
+        return (
             GlobalPaths.OUTPUT_FILES / f'plot_{model}' /
             filename
         )
@@ -222,7 +239,7 @@ class Classifier:
             self.__save_model(self.__define_model_filename())
         
         elif self.__classifier_hyperparameters_object._classifier.mode == 'test':
-            #NOTE. TODO. Carica il modello prima di testarlo
+            self.__model = self.__load_model(self.__classifier_hyperparameters_object._classifier.saved_model_name)
             self.__evaluate()
 
 if __name__ == '__main__':

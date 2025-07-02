@@ -56,14 +56,14 @@ class TrainingMetrics:
         self.epochs.append(epoch)
         self.loss.append(loss)
 
-    def print_last(self):
+    def print_last_classification(self):
         """
             Stampa i valori dell’ultima epoca
             Task: classificazione
         """
         print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
 
-    def print_last(self):
+    def print_last_regression(self):
         """
             Stampa i valori dell’ultima epoca
             Task: regressione
@@ -135,7 +135,7 @@ class TrainingMetrics:
                 auc = 0.0
 
         self.log(epoch=epoch, loss=loss, precision=precision, recall=recall, f1=f1, auc=auc)
-        self.print_last()
+        self.print_last_classification()
 
 def get_today_string():
     """
