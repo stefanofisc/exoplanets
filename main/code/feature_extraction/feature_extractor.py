@@ -54,7 +54,6 @@ class InputVariablesModelTraining:
     _num_classes: int
     _weight_decay: float
     _momentum: float
-    _metrics_output_path: str
     _save_model: bool
     _purpose: str
     _saved_model_name: str
@@ -74,7 +73,6 @@ class InputVariablesModelTraining:
             _num_classes=config.get('num_classes', None),
             _weight_decay=config.get('weight_decay', None),   # necessario solo se optimizer = SGD
             _momentum=config.get('momentum', None),           # necessario solo se optimizer = SGD
-            _metrics_output_path=config.get('metrics_output_path', GlobalPaths.OUTPUT_FILES / 'plot_cnn_training_metrics'),
             _save_model=config.get('save_model', False),
             _purpose=config.get('purpose', 'TBD'),
             _saved_model_name=config.get('saved_model_name', None)
@@ -334,7 +332,7 @@ class Model:
         print("\nTraining completed.")        
         # Plot training metrics once training is completed. Use methods from the class TrainingMetrics
         self.__training_metrics.plot_metrics(
-          output_path=GlobalPaths.OUTPUT_FILES / self.__training_hyperparameters._metrics_output_path,
+          output_path=GlobalPaths.OUTPUT_FILES / 'training_metrics' / 'feature_extractor',
           model_name=self.__training_hyperparameters._model_name,
           optimizer=self.__training_hyperparameters._optimizer,
           num_epochs=self.__training_hyperparameters._num_epochs,
