@@ -4,18 +4,18 @@ mlp:
   hidden_layers: [128, 32, 8]      
   output_dim: 2      
   activation: "ReLU"
-  saved_model_name: "2025-06-21_resnet_sgd_30_tess_tey23_from_scratch_mlp.pt"
+  saved_model_name: "2025-07-03_resnet_adam_50_kepler_dr25_from_scratch_mlp.pt"
 
-#training:
-#  batch_size: 256
-#  learning_rate: 0.001
-#  epochs: 150
-#  optimizer: "sgd"
-#  loss_function: "MeanSquaredError"
-#  weight_decay: 0.0001             # use when optimizer is SGD
-#  momentum: 0.99                   # use when optimizer is SGD
+training:
+  batch_size: 256
+  learning_rate: 0.001
+  epochs: 10
+  optimizer: "adam"
+  loss_function: "MeanSquaredError"
+  #weight_decay: 0.0001             # use when optimizer is SGD
+  #momentum: 0.99                   # use when optimizer is SGD
 
 dataset:
-  filename_samples: '2025-06-21_resnet_sgd_30_tess_tey23_test_features.npy'          # extracted features, by cnn
-  #filename_labels: '2025-06-21_resnet_sgd_30_tess_tey23_train_features_2d_tsne.npy'   # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
-  filename_dispositions: '2025-06-21_resnet_sgd_30_tess_tey23_test_labels.npy'       # extracted labels in FEATURES_STEP1_CNN
+  filename_samples: '2025-07-03_resnet_adam_50_kepler_dr25_test_features.npy'          # extracted features, by cnn, in in FEATURES_STEP1_CNN
+  #filename_labels: '2025-07-03_resnet_adam_50_kepler_dr25_train_features_2d_tsne.npy'   # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
+  filename_dispositions: '2025-07-03_resnet_adam_50_kepler_dr25_test_labels.npy'       # extracted labels in FEATURES_STEP1_CNN

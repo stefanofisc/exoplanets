@@ -1,21 +1,19 @@
 classifier:
-  mode: 'test'     # 'train', 'test'
-  model: 'qda'      # 'svm', 'lda', 'qda'
-  saved_model_name: '2025-06-21_resnet_sgd_30_tess_tey23_qda_svd.joblib' # name of the trained model to load in order to assess its predictive performance
+  mode:   'test'      # 'train', 'test'
+  model:  'svm'       # 'svm', 'lda', 'qda'
+  saved_model_name:   '2025-07-03_resnet_adam_50_kepler_dr25_svm_rbf.joblib' # name of the trained model to load in order to assess its predictive performance
+  
   # SVM specific parameter
-  #kernel: 'linear'  # 'linear', 'rbf'  #NOTE. Mandatory in test mode too
-  #C: 1.0
-  #gamma: 'scale'
-  #decision_function_shape: 'ovo'
+  kernel: 'rbf'       # 'linear', 'rbf'  #NOTE. Mandatory in test mode too
+  C:      1.0
+  gamma:  'scale'
+  decision_function_shape: 'ovo'
+  
   # LDA, QDA specific parameters
-  solver: 'svd'     # 'svd', 'lsqr', 'eigen'
-  shrinkage: null   # Default is null = None in YAML; 'auto': Ledoit-Wolf lemma; float: custom shrinkage parameter in [0,1]
-  n_components: 2   # Number of components for dimensionality reduction
-dataset:
-  filename_samples: '2025-06-21_resnet_sgd_30_tess_tey23_test_features_2d_mlp.npy'     # projected features by mlp, in FEATURES_STEP2_MLP
-  filename_labels: '2025-06-21_resnet_sgd_30_tess_tey23_test_labels_2d_mlp.npy'
+  #solver:        'svd'     # 'svd', 'lsqr', 'eigen'
+  #shrinkage:     null      # Default is null = None in YAML; 'auto': Ledoit-Wolf lemma; float: custom shrinkage parameter in [0,1]
+  #n_components:  2   # Number of components for dimensionality reduction
 
-#NOTE. 
-  # Ridondanti:
-    #num_classes: 3 # ridondante, posso ricavarlo dal numero di valori distinti in labels   
-    #filename_dispositions: '2025-06-21_resnet_sgd_30_tess_tey23_train_labels_2d_mlp.npy'  # labels, in FEATURES_STEP2_MLP
+dataset:
+  filename_samples: '2025-07-03_resnet_adam_50_kepler_dr25_test_features_2d_mlp.npy'     # projected features by mlp, in FEATURES_STEP2_MLP
+  filename_labels:  '2025-07-03_resnet_adam_50_kepler_dr25_test_labels_2d_mlp.npy'        # related dispositions, in FEATURES_STEP2_MLP

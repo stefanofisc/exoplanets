@@ -1,6 +1,6 @@
 # Path al file CSV contenente il dataset. Da definire in ogni circostanza.
 # values: {kepler_q1-q17_dr24_multiclass.csv, kepler_q1-q17_dr25_multiclass.csv, tess_tey2023_multiclass_ycategorical.csv}
-dataset_filename: 'tess_tey2023_multiclass_ycategorical.csv'
+dataset_filename: 'kepler_q1-q17_dr25_multiclass.csv'
 
 # Questa keyword viene processata nel costruttore di Dataset. Se è presente nel file di config, allora significa che l'oggetto Dataset è stato istanziato
 # al fine di processare un nuovo pandas DataFrame. Si verifica soltanto l'esistenza della keyword, quindi il suo valore non conta ai fini del codice. 
@@ -30,4 +30,4 @@ dataset_save_split_tensors: False
 #test_tensor_path: 'tess_tey2023_multiclass_test_split.pt'   # decommenta se dataset_save_split_tensors=True
 
 load_tensors: True
-catalog_name: 'tess_tey23'    # catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23'
+catalog_name: 'kepler_dr25'    # catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23'
