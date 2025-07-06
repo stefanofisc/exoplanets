@@ -1,33 +1,75 @@
-# Exoplanets detection with Deep Learning
+# Exoplanet Detection 🪐
 
 ## Introduction
 
 
-## How to run the code
-Per adesso, il codice può essere eseguito nel seguente modo:
+---
 
-1. In ```[main/code/dataset/config_dataset.yaml]```  Modifica le variabili 'dataset_filename' e 'catalog_name' per caricare uno dei tre dataset in formato PyTorch TensorDataset. Il codice caricherà gli split training-test (80%-20%) che ho preventivamente generato per ogni dataset.
-2. In ```[main/code/feature_extraction/config_feature_extractor.yaml]``` Seleziona il nome della Convolutional Neural Network che vuoi usare come estrattore di caratteristiche: vgg o resnet.
-3. In ```[feature_extraction/vgg (o resnet)/]``` Vai nel relativo file di configurazione (e.g. ```config_vgg.yaml```) per settare i parametri architetturali e di training del modello.
-4. Da riga di comando, esegui:
+## Dataset
 
+**Download Link:** https://drive.google.com/file/d/18rUMHXPRWOwFYCNCZ-ph27aB-qbEPUtO/view?usp=sharing
+
+## Pipeline Execution
+
+1. **Dataset Preprocessing** - Creating, loading, training-test split
+2. **Feature Extraction** - Identification and extraction of relevant astronomical features
+3. **Dimensionality Reduction** - Optimization of feature space for improved performance
+4. **Classification** - Model training and exoplanet classification
+
+## Execution Modes
+
+To ensure code reusability and adaptability for other projects, the system is designed with independent, modular components that can be combined to create a complete ML pipeline.
+
+Two execution modes are available:
+* Individual Modules: Execute specific components independently for targeted analysis or debugging.
+*  Complete Pipeline: Automated execution of all modules in sequence for end-to-end processing.
+
+## Configuration Files
+
+Configuration files for individual modules are located in the `config/` directory. These files enable execution with custom parameters tailored to specific requirements.
+
+For detailed parameter descriptions and usage instructions, refer to the respective `readme_<module_name>.md` files in each module directory.
+
+**Note:** Parameters are loaded by individual modules and are also applied during Complete Pipeline execution.
+
+## Usage
+
+### Complete Pipeline Execution
 ```bash
-python3 feature_extractor.py > ../../output_files/<YYYY-MM-DD>_<model>_<further_information>.out
+python3 main_pipeline.py
 ```
 
-Per esempio:
-```bash
-python3 feature_extractor.py > ../../output_files/2025-06-02_feature_extractor_test-6_integrating_Dataset-VGG-Resnet-Model.out
+### Individual Module Execution
+Navigate to the specific module directory and refer to the corresponding README file for execution instructions. 
+
+## Project Structure
+
 ```
+│───main/
+│   └───trained_models/                     # Output models trained
+│   └───data/                               # Dataset storage
+│   └───output_files/                       # output folder
+│   └───code/                               # Individual processing modules
+│       ├───classification/                 # Classification module
+│       ├───config/                         # Configuration files
+│       ├───dataset/                        # Data preprocessing module
+│       ├───dimensionality_reduction/       # Dimensionality reduction module
+│       ├───feature_extraction/             # Feature extraction module
+│       │   ├───resnet/                     # ResNet18, ResNet34 class  
+│       │   └───vgg/                        # VGG-19 class
+│       └───utils/                          # library
+```
+## Requirements
 
+- Python 3.7+
+- Required dependencies (see `requirements.txt`)
 
-### Setting up conda environment
+## Getting Started
 
+1. Download the dataset from the provided link
+2. Install required dependencies
+3. Configure parameters in the `config/` directory
+4. Choose your execution mode (complete pipeline or individual modules)
+5. Run the analysis
 
-## Data
-
-Link to download the dataset: https://drive.google.com/file/d/18rUMHXPRWOwFYCNCZ-ph27aB-qbEPUtO/view?usp=sharing
-
-
-## Development
-Link to the Google Document we are using to keep track about any update: https://docs.google.com/document/d/1InzZJqh13LRLW6fWPuhjtBzl0_MMm5-JdZ-Xc6xOX6w/edit?usp=sharing
+For detailed module-specific instructions, consult the individual README files in each module directory.
