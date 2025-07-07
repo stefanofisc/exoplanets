@@ -1,31 +1,44 @@
-import torch
-import os
-import matplotlib.pyplot as plt
-from datetime import datetime
-from pathlib import Path
-from dataclasses import dataclass, field
-from typing import List
-from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
+import  torch
+import  os
+import  matplotlib.pyplot   as      plt
+from    datetime            import  datetime
+from    pathlib             import  Path
+from    dataclasses         import  dataclass, field
+from    typing              import  List
+from    sklearn.metrics     import  precision_score, recall_score, f1_score, roc_auc_score
 
 
 class GlobalPaths:
     # exoplanets/
-    HOME = Path.home() / 'Desktop'                  # automatico: /home/<username>/Desktop
-    MAIN = HOME / 'exoplanets' / 'main'             # main/
-    CODE = MAIN / 'code'                            # main/code/
-    DATA = MAIN / 'data'                            # main/data/
-    OUTPUT_FILES = MAIN / 'output_files'            # main/output_files/
-    TRAINED_MODELS = MAIN / 'trained_models'        # main/trained_models/
+    HOME                = Path.home() / 'Desktop'                   # automatico: /home/<username>/Desktop
+    MAIN                = HOME / 'exoplanets' / 'main'              # main/
+    CODE                = MAIN / 'code'                             # main/code/
+    DATA                = MAIN / 'data'                             # main/data/
+    OUTPUT_FILES        = MAIN / 'output_files'                     # main/output_files/
+    TRAINED_MODELS      = MAIN / 'trained_models'                   # main/trained_models/
     # data/
-    CSV = DATA / 'main_datasets' / 'csv_format'
-    FEATURES_STEP1_CNN = DATA / 'features_step1_cnn'
+    CSV                 = DATA / 'main_datasets' / 'csv_format'
+    FEATURES_STEP1_CNN  = DATA / 'features_step1_cnn'
     FEATURES_STEP2_TSNE = DATA / 'features_step2_tsne'
-    FEATURES_STEP2_MLP = DATA / 'features_step2_mlp'
+    FEATURES_STEP2_MLP  = DATA / 'features_step2_mlp'
+    PLATO_RAW_DATA      = DATA / 'plato_raw_data'
     # code/
-    DATASET = CODE / 'dataset'                      # main/code/dataset
-    FEATURE_EXTRACTION = CODE / 'feature_extraction'# main/code/feature_extraction
-    UTILS = CODE / 'utils'                          # main/code/utils/
-    CONFIG = CODE / 'config'
+    DATASET             = CODE / 'dataset'                          # main/code/dataset
+    FEATURE_EXTRACTION  = CODE / 'feature_extraction'               # main/code/feature_extraction
+    UTILS               = CODE / 'utils'                            # main/code/utils/
+    CONFIG              = CODE / 'config'
+    # config files
+    config_data_preparation         =   'config_data_preparation.yaml'
+    config_manifold_learning        =   'config_manifold_learning.yaml'
+    #TODO Put config filenames here
+    
+    # dataset filenames
+    plato_parameters_ftr_file             =   'sim00465_06899_Parameters.ftr'
+    plato_parameters_conts_ftr_file       =   'sim00465_06899_Parameters_Conts.ftr'
+    plato_all_parameters_ftr_file         =   'sim00465_06899_AllParameters.ftr'
+    plato_all_parameters_conts_ftr_file   =   'sim00465_06899_AllParameters_Conts.ftr'
+    plato_fitted_events_ftr_file          =   'join_FittedEvents_AllParameters.ftr'
+    plato_fitted_events_pkl_file          =   'Fitted_events_concatenate.pkl'
 
 @dataclass
 class TrainingMetrics:

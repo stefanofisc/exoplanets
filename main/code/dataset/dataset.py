@@ -490,6 +490,24 @@ class DatasetClassifier(TensorDataHandler):
     def __del__(self):
       print('\nDestructor called for the class DatasetMLP')
 
+class DatasetManifoldLearning(TensorDataHandler):
+    def __init__(self, manifold_learning_dataset_hyperparameters_object):
+      super().__init__()
+
+      self.__dataset_conf = manifold_learning_dataset_hyperparameters_object
+
+      self.__load_training_data()
+      
+      super()._print_tensor_shapes()
+
+    def __load_training_data(self):
+      """
+        Carica i numpy.ndarray (x_train, y_train).
+      """
+      super().set_x_y_train(
+        np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_samples),
+        np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_labels).astype(int)
+      )
 
 def main_dataset_class():
     # Carica il file di configurazione YAML

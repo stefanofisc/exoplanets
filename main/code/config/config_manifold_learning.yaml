@@ -1,0 +1,7 @@
+dataset:
+  filename_samples: ''
+  filename_labels:  ''    # Optional
+
+embedding:
+  algorithm:    'isomap'  # isomap, lle, mdscal, ...
+  n_components: 2

@@ -1,21 +1,21 @@
-import sys
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import yaml
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-from tqdm import tqdm
-from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Optional
+import  sys
+import  torch
+import  torch.nn            as nn
+import  torch.optim         as optim
+import  yaml
+import  os
+import  numpy               as np
+import  matplotlib.pyplot   as plt
+from    tqdm                import tqdm
+from    dataclasses         import dataclass
+from    pathlib             import Path
+from    typing              import List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from utils import GlobalPaths, get_device, TrainingMetrics
+from utils                  import GlobalPaths, get_device, TrainingMetrics
 
 sys.path.insert(1, str(Path(__file__).resolve().parent.parent / 'dataset'))
-from dataset import DatasetMLP
+from dataset                import DatasetMLP
 
 device = get_device()
 
