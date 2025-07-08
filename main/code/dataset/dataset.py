@@ -1,16 +1,16 @@
-import sys
-import yaml
-import torch
-import pandas as pd
-import numpy as np
-from torch.utils.data import TensorDataset, DataLoader
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from collections import Counter
-from pathlib import Path
+import  sys
+import  yaml
+import  torch
+import  pandas                  as pd
+import  numpy                   as np
+from    torch.utils.data        import TensorDataset, DataLoader
+from    sklearn.model_selection import train_test_split
+from    sklearn.preprocessing   import LabelEncoder
+from    collections             import Counter
+from    pathlib                 import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from utils import GlobalPaths
+from    utils                   import GlobalPaths
 
 class PathConfigDataset:
     # Collection of input variables shared among the modules
@@ -490,24 +490,6 @@ class DatasetClassifier(TensorDataHandler):
     def __del__(self):
       print('\nDestructor called for the class DatasetMLP')
 
-class DatasetManifoldLearning(TensorDataHandler):
-    def __init__(self, manifold_learning_dataset_hyperparameters_object):
-      super().__init__()
-
-      self.__dataset_conf = manifold_learning_dataset_hyperparameters_object
-
-      self.__load_training_data()
-      
-      super()._print_tensor_shapes()
-
-    def __load_training_data(self):
-      """
-        Carica i numpy.ndarray (x_train, y_train).
-      """
-      super().set_x_y_train(
-        np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_samples),
-        np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_labels).astype(int)
-      )
 
 def main_dataset_class():
     # Carica il file di configurazione YAML

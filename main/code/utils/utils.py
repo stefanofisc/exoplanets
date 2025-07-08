@@ -27,6 +27,8 @@ class GlobalPaths:
     FEATURE_EXTRACTION  = CODE / 'feature_extraction'               # main/code/feature_extraction
     UTILS               = CODE / 'utils'                            # main/code/utils/
     CONFIG              = CODE / 'config'
+    # plot/
+    PLOT_MANIFOLD_LEARNING  =   OUTPUT_FILES / 'plot_manifold_learning'
     # config files
     config_data_preparation         =   'config_data_preparation.yaml'
     config_manifold_learning        =   'config_manifold_learning.yaml'
