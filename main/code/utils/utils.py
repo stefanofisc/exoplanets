@@ -21,13 +21,15 @@ class GlobalPaths:
     FEATURES_STEP1_CNN  = DATA / 'features_step1_cnn'
     FEATURES_STEP2_TSNE = DATA / 'features_step2_tsne'
     FEATURES_STEP2_MLP  = DATA / 'features_step2_mlp'
-    PLATO_RAW_DATA      = DATA / 'plato_raw_data'
+    PLATO_DATA_TABLES   = DATA / 'plato_data' / 'table_format'
+    PLATO_DATA_NUMPY    = DATA / 'plato_data' / 'numpy_format'
     # code/
     DATASET             = CODE / 'dataset'                          # main/code/dataset
     FEATURE_EXTRACTION  = CODE / 'feature_extraction'               # main/code/feature_extraction
     UTILS               = CODE / 'utils'                            # main/code/utils/
     CONFIG              = CODE / 'config'
     # plot/
+    PLOT_DEBUG              =   OUTPUT_FILES / 'plot_debug'
     PLOT_MANIFOLD_LEARNING  =   OUTPUT_FILES / 'plot_manifold_learning'
     # config files
     config_data_preparation         =   'config_data_preparation.yaml'

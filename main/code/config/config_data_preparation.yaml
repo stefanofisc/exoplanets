@@ -1,4 +1,4 @@
 # config_data_preparation.yaml
 sampling_rate:      1
 global_view_length: 201
-fixed_depth: True
+fixed_depth:        False

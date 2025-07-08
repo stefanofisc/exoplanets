@@ -26,27 +26,13 @@ from    dataset_plato_table_allparameters   import DatasetAllParameters
 class InputGenerator:
     def __init__(self):
         self.__log              =   Logger()
-        self.__dataset          =   DatasetAllParameters(GlobalPaths.PLATO_RAW_DATA / GlobalPaths.plato_fitted_events_ftr_file) #type: <class 'lam_1_table_allparameters.DatasetAllParameters'>
+        self.__dataset          =   DatasetAllParameters(GlobalPaths.PLATO_DATA_TABLES / GlobalPaths.plato_fitted_events_ftr_file) #type: <class 'lam_1_table_allparameters.DatasetAllParameters'>
         self.__dataprocessor    =   DataProcessor()
 
         # Data structures to store output data
         self.__global_views         = []
         self.__global_views_id      = []
         self.__global_views_labels  = []
-    
-    def __check_nan_in_flux(self, np_array):
-        """
-            Verifica se un singolo numpy.ndarray contiene almeno un NaN.
-
-            Args:
-                np_array (numpy.ndarray): L'array NumPy da controllare.
-
-            Returns:
-                bool: True se l'array contiene almeno un NaN, False altrimenti.
-        """
-        # np.isnan(np_array) crea un array booleano dove True indica un NaN
-        # np.any() controlla se c'è almeno un True nell'array booleano
-        return np.any(np.isnan(np_array))
 
     def __define_mapping_labels(self):
         """
@@ -86,20 +72,41 @@ class InputGenerator:
         else:
             raise ValueError(f"label {label} doesn't exist in this table")
 
-    def plot(self, lc, signal_type, idx):
-        #time = np.linspace(0,201,201)
+    def plot(self, lc=None, signal_type=999, signal_idx=999, signal_label='global view', time=None, flux=None):
+        """
+            Plot PLATO light curves.
+            Input:
+                - lc:                   a lk.LightCurve object
+                - signal_type (int):    the label of the signal
+                - signal_idx (int):     the event-id of the signal
+                - signal_label (str):   the label you want to show in the plot
+                - time (numpy.ndarray): time values of the signal
+                - flux (numpy.ndarray): flux values of the signal
+            
+            In order to plot, provide the lc object or time and flux values instead.
+        """
         plt.figure(figsize=(10,6))
 
-        plt.plot(lc.time.value, lc.flux.value, '.', linewidth=1, label='Global view')
-        #plt.plot(lc.time.value, np.flip(lc.flux.value), '.', linewidth=1, label='Horizontal reflection')   #NOTE. Horiz.refl.
-
+        if lc is not None:
+            plt.plot(lc.time.value, lc.flux.value, '.', linewidth=1, label=signal_label)
+            #plt.plot(lc.time.value, np.flip(lc.flux.value), '.', linewidth=1, label='Horizontal reflection')   #NOTE. Horiz.refl.
+        elif time is not None and flux is not None:
+            plt.plot(time, flux, '.', linewidth=1, label=signal_label)
+        else:
+            self.__log.error('In class InputGenerator.plot(). Missing time-flux data to plot.')
+        
         plt.grid(True, alpha=0.2)
         plt.legend(loc='best')
         plt.tight_layout()
-        plt.savefig(GlobalPaths.OUTPUT_FILES / 'plot_plato_lc' / f'{idx}_{signal_type}.png', dpi=1200)
+        plt.savefig(GlobalPaths.PLOT_DEBUG / 'plato_phase-flux_data_zero-median' / f'{signal_idx}_{signal_type}.png', dpi=600)
         plt.close()
 
-    def __generate_single_record(self, phase_time, phase_flux):
+    def __filter_out_rows(self, my_df, event_id_to_reject):
+        # Create a boolean mask: True for rows to keep, False otherwise
+        rows_to_keep    = ~my_df[FittedEventsColumns.EVENT_ID].isin(event_id_to_reject)
+        return          my_df[rows_to_keep].copy() # .copy() to avoid SettingWithCopyWarning
+
+    def __generate_single_record(self, phase_time, phase_flux, event_id, label):
         """
             Generate a single input record <global_view, event_id, label>
             This is the structure of each row in the output csv file
@@ -121,7 +128,9 @@ class InputGenerator:
             column_name = FittedEventsColumns.LABEL,
             mapping     = self.__define_mapping_labels()
         )
-        cnt_nan = 0
+        # Filter out inconsistent phase folded light curves
+        my_df   = self.__filter_out_rows(my_df, ['00465-0','06772-0','06820-0','00796-0'])
+
         # Iterate over the input csv file
         for idx, tce in tqdm(my_df.iterrows(), total=len(my_df), desc="Processing Records"):
             # Get event id and label.
@@ -129,27 +138,36 @@ class InputGenerator:
             label       = tce[FittedEventsColumns.LABEL]
 
             try:
-                # Extract phase time and phase flux (type: <class 'numpy.ndarray'>, length: 500)
-                #[NOTE DECOMMENT] phase_time = tce[FittedEventsColumns.PHASE_TIME]
+                # Extract phase time and phase flux (type: <class 'numpy.ndarray'>, length: 500). No NaN in phase_time arrays
+                phase_time = tce[FittedEventsColumns.PHASE_TIME]
                 phase_flux = tce[FittedEventsColumns.PHASE_FLUX]
-                if self.__check_nan_in_flux(phase_flux) == True:
-                    cnt_nan += 1
-                #[NOTE DEBUG] Check for nan in phase_flux
-
-                # Binning flux data
-                #[NOTE DECOMMENT] self.__generate_single_record(phase_time, phase_flux)
+                if self.__dataprocessor._check_nan_in_flux(phase_flux) == True:
+                    # Interpolate over NaN in phase_flux arrays
+                    phase_flux  = self.__dataprocessor._interpolate_nan(phase_flux)
+                
+                #phase_flux = self.__dataprocessor._zero_median(phase_flux)
+                """
+                #NOTE DEBUG
+                self.plot(
+                    signal_type = label,
+                    signal_idx  = event_id,
+                    signal_label= 'phase flux zero-median',
+                    time        = phase_time,
+                    flux        = phase_flux_norm
+                    )
+                """
+                self.__generate_single_record(phase_time, phase_flux, event_id, label)
 
             except Exception as e:
                 self.__log.error(f'In class Preprocessing, generate_input_records() --> {e}')
-        self.__log.info(f'Signals with at least one NaN: {cnt_nan}')
-        """ [NOTE DECOMMENT]
+        
         self.__dataprocessor.save_output_to_csv(
             output_csv_file     = GlobalPaths.CSV / output_csv_file,
             global_views        = self.__global_views,
             global_views_id     = self.__global_views_id,
             global_views_labels = self.__global_views_labels
             )
-        """
+
         del my_df
 
     def main(self, output_csv_file:str):
@@ -161,4 +179,4 @@ class InputGenerator:
 
 if __name__ == '__main__':
     p = InputGenerator()
-    p.main('FittedEvents_phase_flux.csv')
+    p.main('plato_FittedEvents_globalview_originaltdepth_multiclass.csv')

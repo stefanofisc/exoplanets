@@ -45,6 +45,20 @@ class DataProcessor:
     @property
     def fixed_depth(self):
         return self.__fixed_depth
+    
+    def _check_nan_in_flux(self, np_array):
+        """
+            Check for NaN in a numpy.ndarray
+
+            Args:
+                np_array (numpy.ndarray): The NumPy array to be checked.
+
+            Returns:
+                bool: True if the array contains at least one NaN, False otherwise.
+        """
+        # np.isnan(np_array) crea un array booleano dove True indica un NaN
+        # np.any() controlla se c'è almeno un True nell'array booleano
+        return np.any(np.isnan(np_array))
 
     def __nan_helper(self, y):
         """
@@ -65,7 +79,7 @@ class DataProcessor:
 
         return np.isnan(y), lambda z: z.nonzero()[0]
 
-    def __interpolate_nan(self, global_view_flux):
+    def _interpolate_nan(self, global_view_flux):
         """
             Detect NaNs in the global view flux data and interpolate these values
 
@@ -98,7 +112,7 @@ class DataProcessor:
 
         return global_view_flux
 
-    def __zero_median(self, global_view_flux):
+    def _zero_median(self, global_view_flux):
         """
             #NOTE. Implemento questo metodo perché in PLATO, per identificare i contaminant,
                     secondo me non devo normalizzare le profondità dei transiti.
@@ -254,7 +268,7 @@ class DataProcessor:
         lc_global               = self.__set_global_view_length(lc_phased_binned, self.global_view_length)
         
         # Clean the global view from any NaN and normalize to 0 median and minimum transit depth to -1
-        lc_global_flux_clean    = self.__interpolate_nan(lc_global.flux.value)
+        lc_global_flux_clean    = self._interpolate_nan(lc_global.flux.value)
         lc_global_flux_scaled   = self.__zero_median_fixed_depth(lc_global_flux_clean)
 
         return lk.LightCurve(time = lc_global.time.value, flux = lc_global_flux_scaled)
@@ -271,11 +285,11 @@ class DataProcessor:
             lc_global                   = self.__set_global_view_length(lc_phased_binned, self.global_view_length)
             
             # Clean the global view from any NaN and normalize to 0 median and minimum transit depth to -1
-            lc_global_flux_clean        = self.__interpolate_nan(lc_global.flux.value)
+            lc_global_flux_clean        = self._interpolate_nan(lc_global.flux.value)
             if self.fixed_depth:
                 lc_global_flux_scaled   = self.__zero_median_fixed_depth(lc_global_flux_clean)
             else:
-                lc_global_flux_scaled   = self.__zero_median(lc_global_flux_clean)
+                lc_global_flux_scaled   = self._zero_median(lc_global_flux_clean)
         except Exception as e:
             print(f'[ERROR] In preprocessing_pipeline_from_binning(). The following exception was raised: {e}')
 
