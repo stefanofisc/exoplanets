@@ -26,7 +26,6 @@ class DatasetAllParameters:
         self.__signal_type_values = []
         self.__init_signal_type_values()
     
-
     def __init_signal_type_values(self):
         """
             Salva in __signal_type_values[] le differenti etichette che caratterizzano i dati di questo dataset
@@ -96,7 +95,6 @@ class DatasetAllParameters:
             print(f"Classe '{label}': {count} elements")
 
         print(f"Number of PLATO Input Catalog targets\n-- {self.__df['PIC'].count()}")
-    
 
     def column_describe(self, column_name:str):
         """

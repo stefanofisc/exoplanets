@@ -44,12 +44,12 @@ class GlobalPaths:
 
 @dataclass
 class TrainingMetrics:
-    epochs: List[int] = field(default_factory=list)
-    loss: List[float] = field(default_factory=list)
-    precision: List[float] = field(default_factory=list)
-    recall: List[float] = field(default_factory=list)
-    f1: List[float] = field(default_factory=list)
-    auc_roc: List[float] = field(default_factory=list)
+    epochs:     List[int]   = field(default_factory=list)
+    loss:       List[float] = field(default_factory=list)
+    precision:  List[float] = field(default_factory=list)
+    recall:     List[float] = field(default_factory=list)
+    f1:         List[float] = field(default_factory=list)
+    auc_roc:    List[float] = field(default_factory=list)
 
     def log(self, epoch, loss, precision, recall, f1, auc):
         """

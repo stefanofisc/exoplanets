@@ -85,6 +85,7 @@ class ManifoldLearning:
         self.__projected_features   = self.__embedding.fit_transform(X)
     
     def plot_projected_data(self):
+        #NOTE.  Possibilità di visualizzare gli event-id ad ogni punto proiettato. Grafico interattivo. 
         """
         Plot della proiezione dei dati nello spazio 2D o 3D, a seconda del valore di n_components.
         

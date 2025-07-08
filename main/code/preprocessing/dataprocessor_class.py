@@ -11,6 +11,7 @@ import  yaml
 import  csv
 import  sys
 from    scipy.signal    import  savgol_filter
+from    pathlib         import  Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from    utils           import  GlobalPaths
