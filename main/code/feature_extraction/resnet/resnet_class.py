@@ -89,7 +89,7 @@ class ResNet(nn.Module):
         Resnet-34 architecture. Figure 3 (34-layer residual). Here, the network is
         intended to process 1D signals.
     """
-    def __init__(self, block, num_layers, output_size = 3):
+    def __init__(self, block, num_layers, fc_units = 512, output_size = 3):
         super(ResNet, self).__init__()
         # Set the architecture based on the number of layers given as input
         if num_layers == 18:
@@ -114,7 +114,7 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 256, layers[2], stride = 2)
         self.layer3 = self._make_layer(block, 512, layers[3], stride = 2)
         self.avgpool = nn.AvgPool1d(7, stride=1)
-        self.fc = nn.Linear(512, output_size)
+        self.fc = nn.Linear(fc_units, output_size)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None

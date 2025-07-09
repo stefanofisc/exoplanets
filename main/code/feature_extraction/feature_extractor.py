@@ -13,6 +13,7 @@ from  dataclasses             import dataclass#, field
 from  sklearn.metrics         import precision_score, recall_score, f1_score, roc_auc_score
 from  tqdm                    import tqdm
 from  pathlib                 import Path
+from  typing                  import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from  utils                   import get_today_string, GlobalPaths, get_device, TrainingMetrics
@@ -53,7 +54,7 @@ class InputVariablesModelTraining:
     _momentum:          float
     _save_model:        bool
     _purpose:           str
-    _saved_model_name:  str
+    _saved_model_name:  Optional[str] = ''
 
     @classmethod
     def get_input_hyperparameters(cls, filename):
@@ -72,7 +73,7 @@ class InputVariablesModelTraining:
             _momentum         = config.get('momentum', None),           # necessario solo se optimizer = SGD
             _save_model       = config.get('save_model', False),
             _purpose          = config.get('purpose', 'TBD'),
-            _saved_model_name = config.get('saved_model_name', None)
+            _saved_model_name = config.get('saved_model_name', '')
             )
     
     # define get and set methods
@@ -92,27 +93,27 @@ class Model:
                 - training_test_hyperparameters_object: iperparametri di training / test;
         """
         # Init model architecture
-        self.__model = model
+        self.__model                      = model
         self.__model.to(device)
-        self.__model_hyperparameters = model_hyperparameters_object
+        self.__model_hyperparameters      = model_hyperparameters_object
         # Init dataset object
-        self.__dataset = dataset
+        self.__dataset                    = dataset
         
-        self.__training_hyperparameters = None
-        self.__test_hyperparameters     = None
+        self.__training_hyperparameters   = None
+        self.__test_hyperparameters       = None
 
         if training_test_hyperparameters_object.get_mode() == 'train':
-          # Load training set (a PyTorch DataLoader object)
+          # Load training set (PyTorch DataLoader object)
           self.__training_data_loader     = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
           
           self.__training_hyperparameters = training_test_hyperparameters_object
           self.__training_metrics         = TrainingMetrics()
-          # Init optimizer
-          self.__optimizer = self.__init_optimizer()
+
+          self.__optimizer                = self.__init_optimizer()
         else:
           # Load test set (a PyTorch DataLoader object)
-          self.__test_data_loader     = self.__dataset.get_test_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
-          self.__test_hyperparameters = training_test_hyperparameters_object
+          self.__test_data_loader         = self.__dataset.get_test_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+          self.__test_hyperparameters     = training_test_hyperparameters_object
         
         # Init loss function
         self.__criterion = self.__init_loss()
@@ -145,17 +146,17 @@ class Model:
           Output:
             - class_weights: for multi-class classification, a torch.Tensor containing the weights computed for each class
         """
-        split='train'
+        split = 'train'
         if self.__model_hyperparameters._fc_output_size == 1:
-          num_pos = self.__dataset.get_training_test_set_labels(split).sum()                                # Number of positive samples (class 1: planet)
-          num_neg = len(self.__dataset.get_training_test_set_labels(split)) - num_pos                       #           negative         (class 0: not-planet)
-          pos_weight = (num_neg / num_pos).clone().detach().to(device)  # Weight applied to the loss function (ICF)
-          return pos_weight
+          num_pos       = self.__dataset.get_training_test_set_labels(split).sum()                                # Number of positive samples (class 1: planet)
+          num_neg       = len(self.__dataset.get_training_test_set_labels(split)) - num_pos                       #           negative         (class 0: not-planet)
+          pos_weight    = (num_neg / num_pos).clone().detach().to(device)  # Weight applied to the loss function (ICF)
+          return        pos_weight
         else:
-          class_counts = torch.bincount(self.__dataset.get_training_test_set_labels(split), minlength=self.__training_hyperparameters._num_classes) # Compute class frequency
+          class_counts  = torch.bincount(self.__dataset.get_training_test_set_labels(split), minlength=self.__training_hyperparameters._num_classes) # Compute class frequency
           class_weights = len(self.__dataset.get_training_test_set_labels(split)) / (self.__training_hyperparameters._num_classes * class_counts)   # ICF method
           class_weights = class_weights.float().to(device) # Convert into tensor format
-          return class_weights
+          return        class_weights
 
     def __init_optimizer(self):
         if self.__training_hyperparameters._optimizer == 'adam':
@@ -207,20 +208,20 @@ class Model:
         """
         if self.__training_hyperparameters:
           # Define filename based on mode:train/test
-          today = get_today_string()
-          model_name = self.__training_hyperparameters._model_name
-          optimizer = self.__training_hyperparameters._optimizer
-          num_epochs = self.__training_hyperparameters._num_epochs
-          catalog_name = self.__dataset.get_catalog_name()
-          mode = self.__training_hyperparameters._mode
+          today         = get_today_string()
+          model_name    = self.__training_hyperparameters._model_name
+          optimizer     = self.__training_hyperparameters._optimizer
+          num_epochs    = self.__training_hyperparameters._num_epochs
+          catalog_name  = self.__dataset.get_catalog_name()
+          mode          = self.__training_hyperparameters._mode
           filepath_base = (
             GlobalPaths.FEATURES_STEP1_CNN / 
             f'{today}_{model_name}_{optimizer}_{num_epochs}_{catalog_name}_{mode}_'
           )
         else:
           # do stuff starting from the self.__test_hyperparameters._saved_model_name parameter
-          prefix = (self.__test_hyperparameters._saved_model_name).split("_from")[0]
-          mode = self.__test_hyperparameters._mode
+          prefix  = (self.__test_hyperparameters._saved_model_name).split("_from")[0]
+          mode    = self.__test_hyperparameters._mode
           filepath_base = (
             GlobalPaths.FEATURES_STEP1_CNN /
             f'{prefix}_{mode}_'
@@ -268,9 +269,9 @@ class Model:
           self.__model.train()    # setta il modello in modalità training
           running_loss = 0.0
 
-          all_labels = []
+          all_labels  = []
           all_outputs = []
-          all_probs = []
+          all_probs   = []
 
           # Iterate on batch during i-th training step 
           for batch_x, batch_y in self.__training_data_loader:
@@ -345,8 +346,8 @@ class Model:
 
     def extract_features_from_testset(self):
       # Load the model
-      saved_model_name = self.__test_hyperparameters._saved_model_name
-      model_path = GlobalPaths.TRAINED_MODELS / saved_model_name
+      saved_model_name  = self.__test_hyperparameters._saved_model_name
+      model_path        = GlobalPaths.TRAINED_MODELS / saved_model_name
 
       if not os.path.exists(model_path):
         raise ValueError(f'[ERROR] No occurrence found in "trained_models/" for {saved_model_name}.')
@@ -373,10 +374,8 @@ class Model:
       # Concatenate and save feature vectors and labels
       self.__save_extracted_feature_vectors()
       
-
     def __del__(self):
         print('\nDestructor called for the class Model')
-
 
 class FeatureExtractor:
     def __init__(self):
@@ -384,25 +383,25 @@ class FeatureExtractor:
         Costruttore della classe FeatureExtractor. Carica l'oggetto dataset e l'oggetto model
       """
       # Private attributes of the class
-      self.__dataset_handler = self.__init_dataset()
-      self.__model_hyperparameters_object = None
-      self.__model = None
+      self.__dataset_handler                      = self.__init_dataset()
+      self.__model_hyperparameters_object         = None
+      self.__model                                = None
       self.__training_test_hyperparameters_object = None
       self.__init_model()
       self.__init_training_test_hyperparameters()
     
     def __init_dataset(self):
       # 1. Initialize Dataset object with config_dataset.yaml
-      with open(GlobalPaths.CONFIG / 'config_dataset.yaml', 'r') as fd:
+      with open(GlobalPaths.CONFIG / GlobalPaths.config_dataset_csv_file, 'r') as fd:
           config_fd = yaml.safe_load(fd)
-      # Carica il dataset CSV
+
       df = read_csv(GlobalPaths.CSV / config_fd['dataset_filename'])
-      # Istanzia la classe Dataset ed esegue tutte le operazioni
-      return Dataset(df, config_fd)
+
+      return Dataset(df)
 
     def __init_model(self):
       # 2. Initialize model architecture with config_vgg(resnet).yaml.
-      with open(GlobalPaths.CONFIG / 'config_feature_extractor.yaml', 'r') as fe:
+      with open(GlobalPaths.CONFIG / GlobalPaths.config_feature_extractor_file, 'r') as fe:
           config_fe = yaml.safe_load(fe)
       
       if config_fe['model_name'] == 'vgg':
@@ -426,6 +425,7 @@ class FeatureExtractor:
           self.__model = ResNet(
             ResidualBlock, 
             self.__model_hyperparameters_object.get_resnet_layers_num(),
+            self.__model_hyperparameters_object.get_fc_units(),
             self.__model_hyperparameters_object.get_fc_output_size()
             ).to(device)
           print(self.__model)
@@ -448,7 +448,6 @@ class FeatureExtractor:
         # Extract features from the test set
         model.extract_features_from_testset()
       
-
     def main(self):
       self.__feature_extraction()
 

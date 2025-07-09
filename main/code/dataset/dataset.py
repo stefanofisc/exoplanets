@@ -73,18 +73,14 @@ class Dataset:
 
       if self.__dataset_hyperparameters_object._initialize_from_scratch == True:
         print("Initializing from scratch...")
-        # questa parte viene eseguita se e solo se l'oggetto Dataset viene istanziato al fine di processare un nuovo pandas DataFrame
+        # Questa parte viene eseguita se e solo se l'oggetto Dataset viene istanziato al fine di processare un nuovo pandas DataFrame
         # Mapping the labels (categorical or numerical)
         if self.__dataset_hyperparameters_object._mapping is not None:
           self.__encode_labels(mapping = self.__dataset_hyperparameters_object._mapping)
         else:
-          self.__encode_labels()  #NOTE. Verifica se funzionerà per PLATO
+          self.__encode_labels()
 
-        ### NOTE EXPERIMENTAL ###
-        # Splitting into training-test sets
-        #if config.get('dataset_splitting') == True:
-        #  self._train_df, self._test_df = self.__split(test_size=config.get('test_size', 0.2))
-        
+        # Splitting into training-test sets        
         if self.__dataset_hyperparameters_object._dataset_save_split_format is not None:
 
           # Initialize train_df and test_df split
@@ -105,25 +101,6 @@ class Dataset:
             raise ValueError(f'Got {format} as format. Accepted values: csv, tensor, numpy.')
 
           self.__print_tensor_shapes()
-        """
-        # Save train-test .csv
-        if config.get('dataset_save_split_csv') == True:
-          self.__save_split_as_csv(config['train_df_filename'], config['test_df_filename'])
-        
-        # Save train-test .pt
-        if config.get('dataset_save_split_tensors') == True:
-          self.__save_split_as_tensors(
-            train_tensor_path = config['train_tensor_path'],
-            test_tensor_path  = config['test_tensor_path'],
-            shuffle_train=True
-          )
-          self.__print_tensor_shapes()
-        
-        # Save train-test .npy
-        if config.get('dataset_save_split_numpy') == True:
-          self.__save_as_numpy()
-        """
-      ### NOTE END EXPERIMENTAL ###
 
       elif self.__dataset_hyperparameters_object._load_tensors == True:
         print('Loading tensors...')
@@ -203,7 +180,7 @@ class Dataset:
         
         return train_df.reset_index(drop=True), test_df.reset_index(drop=True)  
 
-    def __save_split_as_csv(self):#, train_df_filename, test_df_filename):
+    def __save_split_as_csv(self):
         """Salva gli split di training e test set"""
         train_filename, test_filename   = self.__get_training_test_filename()
 
@@ -268,9 +245,54 @@ class Dataset:
     def __load_tensors(self, catalog_name):
       """
         Carica train-test split di un dato catalogo in formato tensori PyTorch (.pt)
-        Input:
-          - catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23'
+
+        Args:
+            catalog_name (str): Nome del catalogo. Valori ammessi:
+                'kepler_dr24', 'kepler_dr25', 'tess_tey23', 'plato_flux_original', 'plato_flux_zeromedian'
       """
+      catalog_paths = {
+          'kepler_dr24': (
+              PathConfigDataset.TENSORS / 'kepler_q1-q17_dr24_multiclass_train_split.pt',
+              PathConfigDataset.TENSORS / 'kepler_q1-q17_dr24_multiclass_test_split.pt'
+          ),
+          'kepler_dr25': (
+              PathConfigDataset.TENSORS / 'kepler_q1-q17_dr25_multiclass_train_split.pt',
+              PathConfigDataset.TENSORS / 'kepler_q1-q17_dr25_multiclass_test_split.pt'
+          ),
+          'tess_tey23': (
+              PathConfigDataset.TENSORS / 'tess_tey2023_multiclass_train_split.pt',
+              PathConfigDataset.TENSORS / 'tess_tey2023_multiclass_test_split.pt'
+          ),
+          'plato_flux_original': (
+              PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_original_multiclass_train_split.pt',
+              PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_original_multiclass_test_split.pt'
+          ),
+          'plato_flux_zeromedian': (
+              PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_zeromedian_multiclass_train_split.pt',
+              PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_zeromedian_multiclass_test_split.pt'
+          )
+      }
+
+      if catalog_name not in catalog_paths:
+          raise ValueError(
+              f"[!] In __load_tensors(): catalog_name must be one of {list(catalog_paths.keys())}, got '{catalog_name}' instead."
+          )
+
+      train_tensor_path, test_tensor_path = catalog_paths[catalog_name]
+
+      self.__X_train, self.__y_train      = torch.load(train_tensor_path)
+      self.__X_test, self.__y_test        = torch.load(test_tensor_path)
+
+      print("\n[✓] Tensors loaded successfully.")
+
+    """
+    NOTE. Old. C-oriented
+    def __load_tensors(self, catalog_name):
+      ###
+      #  Carica train-test split di un dato catalogo in formato tensori PyTorch (.pt)
+      #  Input:
+      #    - catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23'
+      ###
       if catalog_name == 'kepler_dr24':
         train_tensor_path = PathConfigDataset.TENSORS / 'kepler_q1-q17_dr24_multiclass_train_split.pt'
         test_tensor_path  = PathConfigDataset.TENSORS / 'kepler_q1-q17_dr24_multiclass_test_split.pt'
@@ -283,6 +305,14 @@ class Dataset:
         train_tensor_path = PathConfigDataset.TENSORS / 'tess_tey2023_multiclass_train_split.pt'
         test_tensor_path  = PathConfigDataset.TENSORS / 'tess_tey2023_multiclass_test_split.pt'
       
+      elif catalog_name == 'plato_flux_original':
+        train_tensor_path = PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_original_multiclass_train_split.pt'
+        test_tensor_path  = PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_original_multiclass_test_split.pt'
+        
+      elif catalog_name == 'plato_flux_zeromedian':
+        train_tensor_path = PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_zeromedian_multiclass_train_split.pt'
+        test_tensor_path  = PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_zeromedian_multiclass_test_split.pt'
+      
       else:
         raise ValueError(f'Error: Class Dataset, in load_tensors().\ncatalog_name must be in [kepler_dr24, kepler_dr25, tess_tey23], got {catalog_name} instead!')
 
@@ -290,6 +320,7 @@ class Dataset:
       self.__X_test, self.__y_test    = torch.load(test_tensor_path)
 
       print("\nTensors loaded successfully")
+    """
 
     def __save_split_as_numpy(self, shuffle_train=True):
         """

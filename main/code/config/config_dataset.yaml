@@ -1,26 +1,28 @@
-# Path al file CSV contenente il dataset. Da definire in ogni circostanza.
-# values: {kepler_q1-q17_dr24_multiclass.csv, kepler_q1-q17_dr25_multiclass.csv, tess_tey2023_multiclass_ycategorical.csv, plato_FittedEvents_phaseflux_original_multiclass.csv}
+# dataset_filename values: {kepler_q1-q17_dr24_multiclass.csv, kepler_q1-q17_dr25_multiclass.csv, tess_tey2023_multiclass_ycategorical.csv, plato_FittedEvents_phaseflux_original_multiclass.csv}
 dataset_filename: 'plato_FittedEvents_phaseflux_original_multiclass.csv'
 
-# Questa keyword viene processata nel costruttore di Dataset. Se è presente nel file di config, allora significa che l'oggetto Dataset è stato istanziato
+# catalog_name values: 'kepler_dr24', 'kepler_dr25', 'tess_tey23', 'plato_flux_original', 'plato_flux_zeromedian'
+catalog_name:     'plato_flux_original'
+
+# NOTE. Questa keyword viene processata nel costruttore di Dataset. Se è presente nel file di config, allora significa che l'oggetto Dataset è stato istanziato
 # al fine di processare un nuovo pandas DataFrame. Si verifica soltanto l'esistenza della keyword, quindi il suo valore non conta ai fini del codice. 
 # Quando invece si istanzia l'oggetto Dataset da altre classi (e.g. Model, per caricare direttamente i TensorDataset precedentemente creati), nel relativo 
-# file di configurazione non ci sarà alcuna keyword initialize_from_scratch, quindi il blocco di codifica e mapping dei labels,così come la creazione ed il 
+# file di configurazione non ci sarà alcuna keyword initialize_from_scratch, quindi il blocco di codifica e mapping dei labels, così come la creazione ed il 
 # salvataggio di nuovi train-test split, non verrà eseguito.
-initialize_from_scratch: True
-# Mappatura etichette opzionale (commentare o rimuovere per usare LabelEncoder automatico)
+initialize_from_scratch: False
+
+# Mappatura etichette opzionale
 # Consente di processare pandas DataFrame con etichette dai valori categorici, convertendole in valori interi.
 #mapping:
 #  B: 0
 #  E: 1
 #  J: 2
 
-# Percentuale di dati da destinare al test set (float in (0, 1)). Irrilevante se setti load_tensors=True
+# Opzionale. Percentuale di dati da destinare al test set (float in (0, 1)). Irrilevante se setti load_tensors=True
 test_size: 0.2
 
-# Scegli se splittare il dataframe in train-test, e se salvarli in csv, TensorDataset o numpy.ndarray
-dataset_save_split_format: 'numpy' # csv, tensor, numpy
+# Opzionale. Scegli se splittare il dataframe in train-test, e se salvarli in csv, TensorDataset o numpy.ndarray
+dataset_save_split_format: 'tensor' # csv, tensor, numpy
 
 # Scegli se caricare direttamente i file di input in formato tensoriale
-load_tensors:   False
-catalog_name:   'kepler_dr25'    # catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23', 'plato'
+load_tensors:   True
