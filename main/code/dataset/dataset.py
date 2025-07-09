@@ -1,92 +1,138 @@
 import  sys
 import  yaml
 import  torch
-import  pandas                  as pd
-import  numpy                   as np
-from    torch.utils.data        import TensorDataset, DataLoader
-from    sklearn.model_selection import train_test_split
-from    sklearn.preprocessing   import LabelEncoder
-from    collections             import Counter
-from    pathlib                 import Path
+import  pandas                  as      pd
+import  numpy                   as      np
+from    torch.utils.data        import  TensorDataset, DataLoader
+from    sklearn.model_selection import  train_test_split
+from    sklearn.preprocessing   import  LabelEncoder
+from    collections             import  Counter
+from    pathlib                 import  Path
+from    dataclasses             import  dataclass
+from    typing                  import  Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from    utils                   import GlobalPaths
+from    utils                   import  GlobalPaths
 
 class PathConfigDataset:
     # Collection of input variables shared among the modules
-    MAIN_DATASET = GlobalPaths.DATA / 'main_datasets'
-    CSV     = MAIN_DATASET / 'csv_format'
-    SPLIT   = MAIN_DATASET / 'csv_format_split_80_20'
-    TENSORS = MAIN_DATASET / 'tensor_format_split_80_20'
+    MAIN_DATASET  = GlobalPaths.DATA  / 'main_datasets'
+    CSV           = MAIN_DATASET      / 'csv_format'
+    SPLIT         = MAIN_DATASET      / 'csv_format_split_80_20'
+    TENSORS       = MAIN_DATASET      / 'tensor_format_split_80_20'
+    NUMPY         = MAIN_DATASET      / 'numpy_format_split_80_20'
+
+@dataclass
+class InputVariablesDatasetCSV:
+    # define type of input data
+    _dataset_filename:          str
+    _initialize_from_scratch:   bool
+    _mapping:                   Optional[dict]
+    _test_size:                 Optional[float]
+    _dataset_save_split_format: Optional[str]
+    _load_tensors:              bool
+    _catalog_name:              Optional[str]
+
+    @classmethod
+    def get_input_hyperparameters(cls, filename):
+        with open(filename, 'r') as file:
+            config = yaml.safe_load(file)
+
+        return cls(
+            _dataset_filename         = config.get('dataset_filename', None),                             
+            _initialize_from_scratch  = config.get('initialize_from_scratch', False),
+            _mapping                  = config.get('mapping', {}),
+            _test_size                = config.get('test_size', 0.2),
+            _dataset_save_split_format= config.get('dataset_save_split_format', None),
+            _load_tensors             = config.get('load_tensors', False),
+            _catalog_name             = config.get('catalog_name', None)
+            )
 
 class Dataset:
-    def __init__(self, dataframe, config):
+    def __init__(self, dataframe):#, config):
       """
         Costruttore della classe Dataset.
         Input:
           - dataframe: pandas DataFrame;
-          - config: oggetto contenente i dati di input definiti in un file di configurazione .yaml.
-        Example of usage:
-        # Creating a Dataset object from scratch, with config_dataset.yaml as configuration file.
-        >>> def main():
-        >>>  # Carica il file di configurazione YAML
-        >>>  with open("config_dataset.yaml", "r") as f:
-        >>>      config = yaml.safe_load(f)
-
-        >>>  # Carica il dataset CSV
-        >>>  df = pd.read_csv(PathConfigDataset.CSV / config["dataset_filename"])
-
-        >>>  # Istanzia la classe Dataset ed esegue tutte le operazioni
-        >>>  dataset_handler = Dataset(df, config)
-        >>>  dataset_handler.count_classes()
-        >>>  dataset_handler.count_classes(dataframe='training')
-        >>>  dataset_handler.count_classes(dataframe='test')
-        >>>  print("Elaborazione completata.")
       """
-      self._df = dataframe.copy()             # The entire pandas DataFrame
-      self._train_df = None                   # Training set .csv
-      self._test_df = None                    # Test set .csv 
-      self.__X_train = None                     # Training set: PyTorch tensor
-      self.__y_train = None
-      self.__X_test = None                      # Test set: PyTorch tensor
-      self.__y_test = None
+      self._df        = dataframe.copy()              # The entire pandas DataFrame
+      self._train_df  = None                          # Training set .csv
+      self._test_df   = None                          # Test set .csv 
+      self.__X_train  = None                          # Training set: PyTorch tensor
+      self.__y_train  = None
+      self.__X_test   = None                          # Test set: PyTorch tensor
+      self.__y_test   = None
 
-      self._config = config
-      self.label_col = self._df.columns[-1]   # Last column of dataframe must be the TCE label
-      self.label_encoder = None
-      self.label_mapping = None
+      ### self._config        = config
+      self.__dataset_hyperparameters_object = self.__init_dataset_hyperparameters()
+
+      self.label_col      = self._df.columns[-1]   # Last column of dataframe must be the TCE label
+      self.label_encoder  = None
+      self.label_mapping  = None
       # End of basic initialization, common to all modules using this class
 
-      if config.get('initialize_from_scratch') == True:
+      if self.__dataset_hyperparameters_object._initialize_from_scratch == True:
         print("Initializing from scratch...")
         # questa parte viene eseguita se e solo se l'oggetto Dataset viene istanziato al fine di processare un nuovo pandas DataFrame
         # Mapping the labels (categorical or numerical)
-        if 'mapping' in config:
-          self.__encode_labels(mapping = config['mapping'])
+        if self.__dataset_hyperparameters_object._mapping is not None:
+          self.__encode_labels(mapping = self.__dataset_hyperparameters_object._mapping)
         else:
-          self.__encode_labels()
+          self.__encode_labels()  #NOTE. Verifica se funzionerà per PLATO
+
+        ### NOTE EXPERIMENTAL ###
         # Splitting into training-test sets
-        if config.get('dataset_splitting') == True:
-          self._train_df, self._test_df = self.__split(test_size=config.get('test_size', 0.2))
-          # Save train-test .csv
+        #if config.get('dataset_splitting') == True:
+        #  self._train_df, self._test_df = self.__split(test_size=config.get('test_size', 0.2))
+        
+        if self.__dataset_hyperparameters_object._dataset_save_split_format is not None:
+
+          # Initialize train_df and test_df split
+          self._train_df, self._test_df = self.__split(test_size = self.__dataset_hyperparameters_object._test_size)
+
+          format = self.__dataset_hyperparameters_object._dataset_save_split_format
+
+          if format == 'csv':
+            self.__save_split_as_csv()
+          
+          elif format == 'tensor':
+            self.__save_split_as_tensors(shuffle_train = True)
+            self.__print_tensor_shapes()
+          
+          elif format == 'numpy':
+            self.__save_split_as_numpy(shuffle_train = True)
+          
+          else:
+            raise ValueError(f'Got {format} as format. Accepted values: csv, tensor, numpy.')
+        """
+        # Save train-test .csv
         if config.get('dataset_save_split_csv') == True:
-          self.__save_split(config['train_df_filename'], config['test_df_filename'])
-          # Save train-test .pt
+          self.__save_split_as_csv(config['train_df_filename'], config['test_df_filename'])
+        
+        # Save train-test .pt
         if config.get('dataset_save_split_tensors') == True:
-          self.__save_as_tensors(
-            train_tensor_path=config['train_tensor_path'],
-            test_tensor_path=config['test_tensor_path'],
+          self.__save_split_as_tensors(
+            train_tensor_path = config['train_tensor_path'],
+            test_tensor_path  = config['test_tensor_path'],
             shuffle_train=True
           )
           self.__print_tensor_shapes()
-      
-      elif config.get('load_tensors') == True:
+        
+        # Save train-test .npy
+        if config.get('dataset_save_split_numpy') == True:
+          self.__save_as_numpy()
+        """
+      ### NOTE END EXPERIMENTAL ###
+
+      elif self.__dataset_hyperparameters_object._load_tensors == True:
         print('Loading tensors...')
-        self.__load_tensors(catalog_name=config['catalog_name'])
+        self.__load_tensors(catalog_name = self.__dataset_hyperparameters_object._catalog_name)
       
       else:
         raise ValueError('[!] initialize_from_scratch or load_tensors must be True')
 
+    def __init_dataset_hyperparameters(self):
+       return InputVariablesDatasetCSV.get_input_hyperparameters(GlobalPaths.CONFIG / GlobalPaths.config_dataset_csv_file)
 
     def count_classes(self, dataframe='main'):
         """
@@ -106,7 +152,7 @@ class Dataset:
           counts = Counter(self._df[self.label_col])
 
         elif dataframe == 'training':
-          if self._config.get('initialize_from_scratch'):
+          if self.__dataset_hyperparameters_object._initialize_from_scratch:
             print('\nShowing samples distribution of training set')
             counts = Counter(self._train_df[self.label_col])
           else:
@@ -137,55 +183,81 @@ class Dataset:
             self.label_mapping = mapping
         else:
             # Code executed for kepler_dr24 and kepler_dr25
-            self.label_encoder = LabelEncoder()
-            self._df[self.label_col] = self.label_encoder.fit_transform(self._df[self.label_col])
-            self.label_mapping = dict(zip(self.label_encoder.classes_, self.label_encoder.transform(self.label_encoder.classes_)))
+            self.label_encoder        = LabelEncoder()
+            self._df[self.label_col]  = self.label_encoder.fit_transform(self._df[self.label_col])
+            self.label_mapping        = dict(zip(self.label_encoder.classes_, self.label_encoder.transform(self.label_encoder.classes_)))
         print("Mapping the labels:", self.label_mapping)
+
+    def __get_training_test_filename(self):
+        """Automatically define the output filenames for training-test split"""
+        dataset_name   = (self.__dataset_hyperparameters_object._dataset_filename).split('multiclass')[0]
+        train_filename = f'{dataset_name}_train_split'
+        test_filename  = f'{dataset_name}_test_split'
+        return train_filename, test_filename
 
     def __split(self, test_size=0.2, random_state=42):
         """Crea uno split bilanciato train/test basato sulle etichette."""
-        stratify_labels = self._df[self.label_col]
+        stratify_labels   = self._df[self.label_col]
         train_df, test_df = train_test_split(self._df, test_size=test_size, random_state=random_state, stratify=stratify_labels)
         
         return train_df.reset_index(drop=True), test_df.reset_index(drop=True)  
 
-    def __save_split(self, train_df_filename, test_df_filename):
+    def __save_split_as_csv(self):#, train_df_filename, test_df_filename):
         """Salva gli split di training e test set"""
-        self._train_df.to_csv(PathConfigDataset.SPLIT / train_df_filename, index=False)
-        self._test_df.to_csv(PathConfigDataset.SPLIT / test_df_filename, index=False)
+        train_filename, test_filename   = self.__get_training_test_filename()
 
-        print(f"\nSaved csv splits into:\n- {PathConfigDataset.SPLIT / train_df_filename}\n- {PathConfigDataset.SPLIT / test_df_filename}")
+        self._train_df.to_csv(PathConfigDataset.SPLIT / f'{train_filename}.csv', index=False)
+        self._test_df.to_csv(PathConfigDataset.SPLIT / f'{test_filename}.csv', index=False)
 
-    def __df_to_tensor(self, df, shuffle=False):
-        X = df.iloc[:, :-1].values.astype('float32')
+        print(f"\nSaved csv splits into:\n- {PathConfigDataset.SPLIT / f'{train_filename}.csv'}\n- {PathConfigDataset.SPLIT / f'{test_filename}.csv'}")
+
+    def __df_to_format(self, df, shuffle=False):
+        """
+          Convert pandas Dataframe to the format specified into the dataset_save_split_format variable.
+          Input:
+            - df (pd.Dataframe): train or test Dataframe
+            - shuffle (bool): usually set to True for training dataframes  
+        """
+        if 'plato' in self.__dataset_hyperparameters_object._dataset_filename:
+           # ALl PLATO dataset have: <flux><event_id><label>
+           X = df.iloc[:, :-2].values.astype('float32')
+        else:
+          # Kepler and TESS dataset have: <flux><label>
+          X = df.iloc[:, :-1].values.astype('float32')
         y = df.iloc[:, -1].values.astype('long')
 
         if shuffle:
           idx = np.random.permutation(len(X))
           X, y = X[idx], y[idx]
 
-        return torch.tensor(X), torch.tensor(y)
+        if self.__dataset_hyperparameters_object._dataset_save_split_format == 'tensor':
+          return torch.tensor(X), torch.tensor(y)
+        
+        elif self.__dataset_hyperparameters_object._dataset_save_split_format == 'numpy':
+          return X, y
+        
+        else:
+           raise ValueError(f'In class Dataset.__df_to_format(), got unexpected format: {self.__dataset_hyperparameters_object._dataset_save_split_format}')
 
-    def __save_as_tensors(self, train_tensor_path, test_tensor_path, shuffle_train=True):
+    def __save_split_as_tensors(self, shuffle_train=True):
         """
-          Salva train/test set come tensori PyTorch (.pt).
-          Parametri:
-          - train_tensor_path = filename del 'train_data.pt'
-          - shuffle_train: se True, esegue lo shuffle del training set.
+          Save train-test split as PyTorch tensors (.pt).
+          Input:
+          - shuffle_train: if True, shuffle the training set samples.
         """
-        #NOTE. Experimental: print(f'In save_as_tensors:\n - Input:\n -- df_train: {len(self._train_df)}\n -- df_test: {len(self._test_df)}')
+        train_filename, test_filename   = self.__get_training_test_filename()
 
-        self.__X_train, self.__y_train = self.__df_to_tensor(self._train_df, shuffle=shuffle_train)
-        self.__X_test, self.__y_test = self.__df_to_tensor(self._test_df, shuffle=False)
+        self.__X_train, self.__y_train  = self.__df_to_format(self._train_df, shuffle=shuffle_train)
+        self.__X_test, self.__y_test    = self.__df_to_format(self._test_df, shuffle=False)
 
-        torch.save((self.__X_train, self.__y_train), PathConfigDataset.TENSORS / train_tensor_path)
-        torch.save((self.__X_test, self.__y_test), PathConfigDataset.TENSORS / test_tensor_path)
+        torch.save((self.__X_train, self.__y_train), PathConfigDataset.TENSORS / f'{train_filename}.pt')
+        torch.save((self.__X_test, self.__y_test), PathConfigDataset.TENSORS / f'{test_filename}.pt')
 
-        print(f"\nSaved tensors into:\n- {PathConfigDataset.TENSORS / train_tensor_path}\n- {PathConfigDataset.TENSORS / test_tensor_path}")
+        print(f"\nSaved tensors into:\n- {PathConfigDataset.TENSORS / f'{train_filename}.pt'}\n- {PathConfigDataset.TENSORS / f'{test_filename}.pt'}")
     
     def __print_tensor_shapes(self):
         """Stampa le dimensioni dei tensori di training e test."""
-        if hasattr(self, "X_train") and hasattr(self, "X_test"):
+        if self.__X_train is not None and self.__X_test is not None:
             print('\nShowing train-test tensors shape:')
             print(f"X_train: {self.__X_train.shape}, y_train: {self.__y_train.shape}")
             print(f"X_test:  {self.__X_test.shape}, y_test:  {self.__y_test.shape}")
@@ -213,10 +285,32 @@ class Dataset:
       else:
         raise ValueError(f'Error: Class Dataset, in load_tensors().\ncatalog_name must be in [kepler_dr24, kepler_dr25, tess_tey23], got {catalog_name} instead!')
 
-      self.__X_train, self.__y_train = torch.load(train_tensor_path)
-      self.__X_test, self.__y_test = torch.load(test_tensor_path)
+      self.__X_train, self.__y_train  = torch.load(train_tensor_path)
+      self.__X_test, self.__y_test    = torch.load(test_tensor_path)
 
       print("\nTensors loaded successfully")
+
+    def __save_split_as_numpy(self, shuffle_train=True):
+        """
+          Save train-test split as numpy.ndarray (.npy).
+          Input:
+          - shuffle_train: if True, shuffle the training set samples.
+        """
+        train_filename, test_filename   = self.__get_training_test_filename()
+
+        self.__X_train, self.__y_train  = self.__df_to_format(self._train_df, shuffle=shuffle_train)
+        self.__X_test, self.__y_test    = self.__df_to_format(self._test_df, shuffle=False)
+
+        print(f'len(X_train, y_train):({len(self.__X_train)}, {len(self.__y_train)})')
+        print(f'len(X_test, y_test):({len(self.__X_test)}, {len(self.__y_test)})')
+
+        np.save(PathConfigDataset.NUMPY / f'{train_filename}_features.npy', self.__X_train)
+        np.save(PathConfigDataset.NUMPY / f'{train_filename}_labels.npy', self.__y_train)
+
+        np.save(PathConfigDataset.NUMPY / f'{test_filename}_features.npy', self.__X_test)
+        np.save(PathConfigDataset.NUMPY / f'{test_filename}_labels.npy', self.__y_test)
+
+        print(f"\nSaved numpy arrays into:\n- {PathConfigDataset.NUMPY / f'{train_filename}_*.npy'}\n- {PathConfigDataset.NUMPY / f'{test_filename}_*.npy'}")
 
     def get_training_test_samples(self):
       return self.__X_train, self.__y_train, self.__X_test, self.__y_test
@@ -248,7 +342,7 @@ class Dataset:
         return self.__y_test
     
     def get_catalog_name(self):
-      return self._config['catalog_name']
+      return self.__dataset_hyperparameters_object._catalog_name
 
     def __del__(self):
       print('\nDestructor called for the class Dataset.')
@@ -489,29 +583,8 @@ class DatasetClassifier(TensorDataHandler):
         
     def __del__(self):
       print('\nDestructor called for the class DatasetMLP')
-
-
-def main_dataset_class():
-    # Carica il file di configurazione YAML
-    with open(GlobalPaths.CONFIG / "config_dataset.yaml", "r") as f:
-        config = yaml.safe_load(f)
-
-    # Carica il dataset CSV
-    df = pd.read_csv(PathConfigDataset.CSV / config["dataset_filename"])
-
-    # Istanzia la classe Dataset ed esegue tutte le operazioni
-    dataset_handler = Dataset(df, config)
-    dataset_handler.count_classes()
-    dataset_handler.count_classes(dataframe='training')
-    dataset_handler.count_classes(dataframe='test')
-
-    x_train, y_train, x_test, y_test = dataset_handler.get_training_test_samples()
-    print('\n Testing the method for loading the training test samples')
-    print(f"X_train: {x_train.shape}, y_train: {y_train.shape}")
-    print(f"X_test:  {x_test.shape}, y_test:  {y_test.shape}")
-
-    del dataset_handler, df
-    
+      
 
 if __name__ == "__main__":
-    main_dataset_class()
+  df = pd.read_csv('/Users/stefanofisc/Desktop/exoplanets/main/data/main_datasets/csv_format/plato_FittedEvents_phaseflux_original_multiclass.csv')
+  d = Dataset(df)

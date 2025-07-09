@@ -1,13 +1,13 @@
 # Path al file CSV contenente il dataset. Da definire in ogni circostanza.
-# values: {kepler_q1-q17_dr24_multiclass.csv, kepler_q1-q17_dr25_multiclass.csv, tess_tey2023_multiclass_ycategorical.csv}
-dataset_filename: 'kepler_q1-q17_dr25_multiclass.csv'
+# values: {kepler_q1-q17_dr24_multiclass.csv, kepler_q1-q17_dr25_multiclass.csv, tess_tey2023_multiclass_ycategorical.csv, plato_FittedEvents_phaseflux_original_multiclass.csv}
+dataset_filename: 'plato_FittedEvents_phaseflux_original_multiclass.csv'
 
 # Questa keyword viene processata nel costruttore di Dataset. Se è presente nel file di config, allora significa che l'oggetto Dataset è stato istanziato
 # al fine di processare un nuovo pandas DataFrame. Si verifica soltanto l'esistenza della keyword, quindi il suo valore non conta ai fini del codice. 
 # Quando invece si istanzia l'oggetto Dataset da altre classi (e.g. Model, per caricare direttamente i TensorDataset precedentemente creati), nel relativo 
 # file di configurazione non ci sarà alcuna keyword initialize_from_scratch, quindi il blocco di codifica e mapping dei labels,così come la creazione ed il 
 # salvataggio di nuovi train-test split, non verrà eseguito.
-initialize_from_scratch: False
+initialize_from_scratch: True
 # Mappatura etichette opzionale (commentare o rimuovere per usare LabelEncoder automatico)
 # Consente di processare pandas DataFrame con etichette dai valori categorici, convertendole in valori interi.
 #mapping:
@@ -16,18 +16,22 @@ initialize_from_scratch: False
 #  J: 2
 
 # Percentuale di dati da destinare al test set (float in (0, 1)). Irrilevante se setti load_tensors=True
-# test_size: 0.2
+test_size: 0.2
 
-# Scegli se splittare il dataframe in train-test, e se salvarli in csv o in TensorDataset
-dataset_splitting: False 
-dataset_save_split_csv: False
-dataset_save_split_tensors: False
+# Scegli se splittare il dataframe in train-test, e se salvarli in csv, TensorDataset o numpy.ndarray
+###dataset_splitting: False 
+###dataset_save_split_csv: False
+###dataset_save_split_tensors: False
+dataset_save_split_format: 'numpy' # csv, tensor, numpy
+
 # Opzionale: filename per salvare lo split di training e test
-#train_df_filename: 'tess_tey2023_multiclass_train_split.csv'
-#test_df_filename: 'tess_tey2023_multiclass_test_split.csv'
-# Opzionale: lavora con train-test split in formato TensorDataset. Definisci filenames
-#train_tensor_path: 'tess_tey2023_multiclass_train_split.pt' # decommenta se dataset_save_split_tensors=True
-#test_tensor_path: 'tess_tey2023_multiclass_test_split.pt'   # decommenta se dataset_save_split_tensors=True
+#NOTE Devono essere determinati automaticamente in base al dataset_filename
 
-load_tensors: True
-catalog_name: 'kepler_dr25'    # catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23'
+###train_df_filename: 'tess_tey2023_multiclass_train_split.csv'
+###test_df_filename: 'tess_tey2023_multiclass_test_split.csv'
+### Opzionale: lavora con train-test split in formato TensorDataset. Definisci filenames
+###train_tensor_path: 'tess_tey2023_multiclass_train_split.pt' # decommenta se dataset_save_split_tensors=True
+###test_tensor_path: 'tess_tey2023_multiclass_test_split.pt'   # decommenta se dataset_save_split_tensors=True
+
+load_tensors: False
+catalog_name: 'kepler_dr25'    # catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23', 'plato'

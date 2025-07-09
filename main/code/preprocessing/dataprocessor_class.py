@@ -240,7 +240,7 @@ class DataProcessor:
         j       = i+1 if f > 0 else i       # Avoid index error.
         return  (1-f) * inp[i] + f * inp[j]
 
-    def __set_global_view_length(self, lc_phased_binned, n_bins):
+    def _set_global_view_length(self, lc_phased_binned, n_bins):
         inp_time, inp_flux  = lc_phased_binned.time.value, lc_phased_binned.flux.value
         delta               = (len(inp_flux)-1) / (n_bins-1)
 
@@ -265,7 +265,7 @@ class DataProcessor:
         lc_flatten              = self.lc_flattening(lc_collection, transit_mask)
         lc_phased               = self.lc_phase_folding(lc_flatten, t0, period, 0.8)
         lc_phased_binned        = self.lc_bin(lc_phased, self.sampling_rate)
-        lc_global               = self.__set_global_view_length(lc_phased_binned, self.global_view_length)
+        lc_global               = self._set_global_view_length(lc_phased_binned, self.global_view_length)
         
         # Clean the global view from any NaN and normalize to 0 median and minimum transit depth to -1
         lc_global_flux_clean    = self._interpolate_nan(lc_global.flux.value)
@@ -282,7 +282,7 @@ class DataProcessor:
         """
         try:
             lc_phased_binned            = self.lc_bin(lc_phased, self.sampling_rate)
-            lc_global                   = self.__set_global_view_length(lc_phased_binned, self.global_view_length)
+            lc_global                   = self._set_global_view_length(lc_phased_binned, self.global_view_length)
             
             # Clean the global view from any NaN and normalize to 0 median and minimum transit depth to -1
             lc_global_flux_clean        = self._interpolate_nan(lc_global.flux.value)

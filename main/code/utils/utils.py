@@ -32,6 +32,7 @@ class GlobalPaths:
     PLOT_DEBUG              =   OUTPUT_FILES / 'plot_debug'
     PLOT_MANIFOLD_LEARNING  =   OUTPUT_FILES / 'plot_manifold_learning'
     # config files
+    config_dataset_csv_file         =   'config_dataset.yaml'
     config_data_preparation         =   'config_data_preparation.yaml'
     config_manifold_learning        =   'config_manifold_learning.yaml'
     #TODO Put config filenames here

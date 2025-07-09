@@ -1,27 +1,24 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torchmetrics
-import numpy as np
+import torch.nn               as nn
+import torch.nn.functional    as F
+import torch.optim            as optim
+import numpy                  as np
 import yaml
 import sys
 import os
-#import matplotlib.pyplot as plt
-from pandas import read_csv
-from resnet.resnet_class import ResidualBlock, ResNet, InputVariablesResnet
-from vgg.vgg_class import VGG19, InputVariablesVGG19
-from dataclasses import dataclass#, field
-from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
-#from typing import List
-from tqdm import tqdm
-from pathlib import Path
+from  pandas                  import read_csv
+from  resnet.resnet_class     import ResidualBlock, ResNet, InputVariablesResnet
+from  vgg.vgg_class           import VGG19, InputVariablesVGG19
+from  dataclasses             import dataclass#, field
+from  sklearn.metrics         import precision_score, recall_score, f1_score, roc_auc_score
+from  tqdm                    import tqdm
+from  pathlib                 import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from utils import get_today_string, GlobalPaths, get_device, TrainingMetrics
+from  utils                   import get_today_string, GlobalPaths, get_device, TrainingMetrics
 
 sys.path.insert(1, str(GlobalPaths.DATASET))
-from dataset import Dataset
+from  dataset                 import Dataset
 
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = get_device()
@@ -45,18 +42,18 @@ class ModelInspector:
 @dataclass
 class InputVariablesModelTraining:
     # define type of input data
-    _mode: str
-    _model_name: str
-    _optimizer: str
-    _learning_rate: float
-    _num_epochs: int
-    _batch_size: int
-    _num_classes: int
-    _weight_decay: float
-    _momentum: float
-    _save_model: bool
-    _purpose: str
-    _saved_model_name: str
+    _mode:              str
+    _model_name:        str
+    _optimizer:         str
+    _learning_rate:     float
+    _num_epochs:        int
+    _batch_size:        int
+    _num_classes:       int
+    _weight_decay:      float
+    _momentum:          float
+    _save_model:        bool
+    _purpose:           str
+    _saved_model_name:  str
 
     @classmethod
     def get_input_hyperparameters(cls, filename):
@@ -64,18 +61,18 @@ class InputVariablesModelTraining:
             config = yaml.safe_load(file)
 
         return cls(
-            _mode=config['mode'],                             # the only mandatory input variable: values={train,test}
-            _model_name=config.get('model_name', None),
-            _optimizer=config.get('optimizer', None),
-            _learning_rate=config.get('learning_rate', None),
-            _num_epochs=config.get('num_epochs', None),
-            _batch_size=config.get('batch_size', 64),
-            _num_classes=config.get('num_classes', None),
-            _weight_decay=config.get('weight_decay', None),   # necessario solo se optimizer = SGD
-            _momentum=config.get('momentum', None),           # necessario solo se optimizer = SGD
-            _save_model=config.get('save_model', False),
-            _purpose=config.get('purpose', 'TBD'),
-            _saved_model_name=config.get('saved_model_name', None)
+            _mode             = config['mode'],                             # the only mandatory input variable: values={train,test}
+            _model_name       = config.get('model_name', None),
+            _optimizer        = config.get('optimizer', None),
+            _learning_rate    = config.get('learning_rate', None),
+            _num_epochs       = config.get('num_epochs', None),
+            _batch_size       = config.get('batch_size', 64),
+            _num_classes      = config.get('num_classes', None),
+            _weight_decay     = config.get('weight_decay', None),   # necessario solo se optimizer = SGD
+            _momentum         = config.get('momentum', None),           # necessario solo se optimizer = SGD
+            _save_model       = config.get('save_model', False),
+            _purpose          = config.get('purpose', 'TBD'),
+            _saved_model_name = config.get('saved_model_name', None)
             )
     
     # define get and set methods
@@ -102,19 +99,19 @@ class Model:
         self.__dataset = dataset
         
         self.__training_hyperparameters = None
-        self.__test_hyperparameters = None
+        self.__test_hyperparameters     = None
 
         if training_test_hyperparameters_object.get_mode() == 'train':
           # Load training set (a PyTorch DataLoader object)
-          self.__training_data_loader = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+          self.__training_data_loader     = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
           
           self.__training_hyperparameters = training_test_hyperparameters_object
-          self.__training_metrics = TrainingMetrics()
+          self.__training_metrics         = TrainingMetrics()
           # Init optimizer
           self.__optimizer = self.__init_optimizer()
         else:
           # Load test set (a PyTorch DataLoader object)
-          self.__test_data_loader = self.__dataset.get_test_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+          self.__test_data_loader     = self.__dataset.get_test_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
           self.__test_hyperparameters = training_test_hyperparameters_object
         
         # Init loss function
@@ -122,7 +119,7 @@ class Model:
 
         # Output: feature vectors
         self.__extracted_features = []
-        self.__extracted_labels = []
+        self.__extracted_labels   = []
 
     def __init_loss(self):
         """

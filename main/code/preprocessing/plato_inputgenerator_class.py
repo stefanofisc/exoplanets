@@ -6,6 +6,7 @@
     The output <global_view, event_id, label> is stored into a csv file in the data/ folder.
     Run this code within the conda environment "preprocessing"
 """
+import  pandas                      as pd   #NOTE RIMUOVI
 import  sys
 import  matplotlib.pyplot           as      plt
 import  lightkurve                  as      lk
@@ -26,7 +27,7 @@ from    dataset_plato_table_allparameters   import DatasetAllParameters
 class InputGenerator:
     def __init__(self):
         self.__log              =   Logger()
-        self.__dataset          =   DatasetAllParameters(GlobalPaths.PLATO_DATA_TABLES / GlobalPaths.plato_fitted_events_ftr_file) #type: <class 'lam_1_table_allparameters.DatasetAllParameters'>
+        self.__dataset          =   DatasetAllParameters(GlobalPaths.PLATO_DATA_TABLES / GlobalPaths.plato_fitted_events_ftr_file) #type: <class 'lam_1_table_allparameters.DatasetAllParameters'> 
         self.__dataprocessor    =   DataProcessor()
 
         # Data structures to store output data
@@ -111,11 +112,13 @@ class InputGenerator:
             Generate a single input record <global_view, event_id, label>
             This is the structure of each row in the output csv file
         """
-        input_lc    = lk.LightCurve(time = phase_time, flux = phase_flux)
-        output_lc   = self.__dataprocessor.preprocessing_pipeline_from_binning(input_lc)                
+        #NOTE Binning, sconsigliato, forse rimuovo
+        #NOTE DECOMMENT input_lc    = lk.LightCurve(time = phase_time, flux = phase_flux)
+        #NOTE DECOMMENT output_lc   = self.__dataprocessor.preprocessing_pipeline_from_binning(input_lc)                
         
         # Append the data <global_view, event_id, label> in the related data structures.
-        self.__global_views.append( output_lc.flux.value )
+        #NOTE DECOMMENT self.__global_views.append( output_lc.flux.value )
+        self.__global_views.append( phase_flux )
         self.__global_views_id.append( event_id )
         self.__global_views_labels.append( label )
 
@@ -132,7 +135,7 @@ class InputGenerator:
         my_df   = self.__filter_out_rows(my_df, ['00465-0','06772-0','06820-0','00796-0'])
 
         # Iterate over the input csv file
-        for idx, tce in tqdm(my_df.iterrows(), total=len(my_df), desc="Processing Records"):
+        for idx, tce in tqdm(my_df.iloc[1228:1300].iterrows(), total=len(my_df), desc="Processing Records"):
             # Get event id and label.
             event_id    = tce[FittedEventsColumns.EVENT_ID]
             label       = tce[FittedEventsColumns.LABEL]
@@ -141,42 +144,73 @@ class InputGenerator:
                 # Extract phase time and phase flux (type: <class 'numpy.ndarray'>, length: 500). No NaN in phase_time arrays
                 phase_time = tce[FittedEventsColumns.PHASE_TIME]
                 phase_flux = tce[FittedEventsColumns.PHASE_FLUX]
+
+                # Interpolate over NaN in phase_flux arrays
                 if self.__dataprocessor._check_nan_in_flux(phase_flux) == True:
-                    # Interpolate over NaN in phase_flux arrays
                     phase_flux  = self.__dataprocessor._interpolate_nan(phase_flux)
-                
-                #phase_flux = self.__dataprocessor._zero_median(phase_flux)
-                """
+
+                #NOTE Salva questo blocco in metodo in dataprocessor_class
+                if len(phase_flux) > 500:
+                    phase_flux      = phase_flux[::2]                               # len(phase_flux) = 500
+                    phase_time      = phase_time[::2]
+                    phase_flux      = self.__dataprocessor._zero_median(phase_flux)
+                #else:
+                #    phase_flux      = self.__dataprocessor._zero_median(phase_flux)
                 #NOTE DEBUG
+                
                 self.plot(
                     signal_type = label,
                     signal_idx  = event_id,
                     signal_label= 'phase flux zero-median',
                     time        = phase_time,
-                    flux        = phase_flux_norm
+                    flux        = phase_flux
                     )
-                """
+                
                 self.__generate_single_record(phase_time, phase_flux, event_id, label)
 
             except Exception as e:
                 self.__log.error(f'In class Preprocessing, generate_input_records() --> {e}')
-        
+        """
         self.__dataprocessor.save_output_to_csv(
             output_csv_file     = GlobalPaths.CSV / output_csv_file,
             global_views        = self.__global_views,
             global_views_id     = self.__global_views_id,
             global_views_labels = self.__global_views_labels
             )
-
+        """
         del my_df
+    
+    def save_signals_and_labels_from_dataframe(self, df, samples_outfile='samples.npy', labels_outfile='labels.npy'):
+        """
+        Salva i segnali (vettori di lunghezza fissa) e le etichette da un DataFrame in due file .npy.
+
+        Args:
+            df (pd.DataFrame): DataFrame in cui ogni riga contiene un vettore di lunghezza 500 e l'ultima colonna contiene l'etichetta.
+            samples_outfile (str): Nome del file .npy per salvare i vettori di input (features).
+            labels_outfile (str): Nome del file .npy per salvare le etichette.
+        """
+
+        # Suddivide in segnali e etichette
+        samples = df.iloc[:, :-2].values.astype(np.float32)  # tutte le colonne tranne l'ultima
+        labels = df.iloc[:, -1].values                       # solo l'ultima colonna
+        self.__log.info(f'samples length: {len(samples)}')
+        exit(0)
+        # Salvataggio su disco
+        np.save(GlobalPaths.PLATO_DATA_NUMPY / samples_outfile, samples)
+        np.save(GlobalPaths.PLATO_DATA_NUMPY / labels_outfile, labels)
+
+        print(f"[✓] Dati salvati correttamente in:\n  - {samples_outfile}\n  - {labels_outfile}")
 
     def main(self, output_csv_file:str):
         self.generate_input_records(output_csv_file)
-
+    
     def __del__(self):
         self.__log.info('Distruttore della classe')
 
 
 if __name__ == '__main__':
     p = InputGenerator()
-    p.main('plato_FittedEvents_globalview_originaltdepth_multiclass.csv')
+    p.main('plato_FittedEvents_phaseflux_original_multiclass.csv')
+    #csv_filename = ''
+    #df = pd.read_csv('/Users/stefanofisc/Desktop/exoplanets/main/data/main_datasets/csv_format/plato_FittedEvents_phaseflux_original_multiclass.csv')
+    #p.save_signals_and_labels_from_dataframe(    df)
