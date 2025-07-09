@@ -97,13 +97,14 @@ class Dataset:
           
           elif format == 'tensor':
             self.__save_split_as_tensors(shuffle_train = True)
-            self.__print_tensor_shapes()
           
           elif format == 'numpy':
             self.__save_split_as_numpy(shuffle_train = True)
           
           else:
             raise ValueError(f'Got {format} as format. Accepted values: csv, tensor, numpy.')
+
+          self.__print_tensor_shapes()
         """
         # Save train-test .csv
         if config.get('dataset_save_split_csv') == True:
@@ -190,7 +191,7 @@ class Dataset:
 
     def __get_training_test_filename(self):
         """Automatically define the output filenames for training-test split"""
-        dataset_name   = (self.__dataset_hyperparameters_object._dataset_filename).split('multiclass')[0]
+        dataset_name   = (self.__dataset_hyperparameters_object._dataset_filename).split('.csv')[0]
         train_filename = f'{dataset_name}_train_split'
         test_filename  = f'{dataset_name}_test_split'
         return train_filename, test_filename
@@ -300,9 +301,6 @@ class Dataset:
 
         self.__X_train, self.__y_train  = self.__df_to_format(self._train_df, shuffle=shuffle_train)
         self.__X_test, self.__y_test    = self.__df_to_format(self._test_df, shuffle=False)
-
-        print(f'len(X_train, y_train):({len(self.__X_train)}, {len(self.__y_train)})')
-        print(f'len(X_test, y_test):({len(self.__X_test)}, {len(self.__y_test)})')
 
         np.save(PathConfigDataset.NUMPY / f'{train_filename}_features.npy', self.__X_train)
         np.save(PathConfigDataset.NUMPY / f'{train_filename}_labels.npy', self.__y_train)

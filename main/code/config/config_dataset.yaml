@@ -19,19 +19,8 @@ initialize_from_scratch: True
 test_size: 0.2
 
 # Scegli se splittare il dataframe in train-test, e se salvarli in csv, TensorDataset o numpy.ndarray
-###dataset_splitting: False 
-###dataset_save_split_csv: False
-###dataset_save_split_tensors: False
 dataset_save_split_format: 'numpy' # csv, tensor, numpy
 
-# Opzionale: filename per salvare lo split di training e test
-#NOTE Devono essere determinati automaticamente in base al dataset_filename
-
-###train_df_filename: 'tess_tey2023_multiclass_train_split.csv'
-###test_df_filename: 'tess_tey2023_multiclass_test_split.csv'
-### Opzionale: lavora con train-test split in formato TensorDataset. Definisci filenames
-###train_tensor_path: 'tess_tey2023_multiclass_train_split.pt' # decommenta se dataset_save_split_tensors=True
-###test_tensor_path: 'tess_tey2023_multiclass_test_split.pt'   # decommenta se dataset_save_split_tensors=True
-
-load_tensors: False
-catalog_name: 'kepler_dr25'    # catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23', 'plato'
+# Scegli se caricare direttamente i file di input in formato tensoriale
+load_tensors:   False
+catalog_name:   'kepler_dr25'    # catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23', 'plato'
