@@ -10,7 +10,6 @@ from    collections             import  Counter
 from    pathlib                 import  Path
 from    dataclasses             import  dataclass
 from    typing                  import  Optional
-from    utils.logger            import  log
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from    utils                   import  GlobalPaths
@@ -52,7 +51,7 @@ class InputVariablesDatasetCSV:
 class Dataset:
     def __init__(self, dataframe):#, config):
       """
-        Dataset class constructor.
+        Costruttore della classe Dataset.
         Input:
           - dataframe: pandas DataFrame;
       """
@@ -73,7 +72,7 @@ class Dataset:
       # End of basic initialization, common to all modules using this class
 
       if self.__dataset_hyperparameters_object._initialize_from_scratch == True:
-        log.info("Initializing from scratch...")
+        print("Initializing from scratch...")
         # Questa parte viene eseguita se e solo se l'oggetto Dataset viene istanziato al fine di processare un nuovo pandas DataFrame
         # Mapping the labels (categorical or numerical)
         if self.__dataset_hyperparameters_object._mapping is not None:
@@ -104,7 +103,7 @@ class Dataset:
           self.__print_tensor_shapes()
 
       elif self.__dataset_hyperparameters_object._load_tensors == True:
-        log.info('Loading tensors...')
+        print('Loading tensors...')
         self.__load_tensors(catalog_name = self.__dataset_hyperparameters_object._catalog_name)
       
       else:
@@ -115,11 +114,11 @@ class Dataset:
 
     def count_classes(self, dataframe='main'):
         """
-          Print the number of elements for each class.
+          Stampa il numero di elementi per ogni classe.
           Input:
             - dataframe: {main, training, test}
           Example of usage:
-          >>> # Print the number of elements per class
+          >>> # Stampa il numero di elementi per classe
           >>> dataset_handler = Dataset(df, config)
           >>> dataset_handler.count_classes()
           >>> dataset_handler.count_classes(dataframe='training')
@@ -127,35 +126,34 @@ class Dataset:
         """
         counts = None
         if dataframe == 'main':
-          log.info('\nShowing samples distribution of the entire dataset')
+          print('\nShowing samples distribution of the entire dataset')
           counts = Counter(self._df[self.label_col])
 
         elif dataframe == 'training':
           if self.__dataset_hyperparameters_object._initialize_from_scratch:
-            log.info('\nShowing samples distribution of training set')
+            print('\nShowing samples distribution of training set')
             counts = Counter(self._train_df[self.label_col])
           else:
             self.__print_tensor_shapes()  # se invece stai lavorando con tensori, chiama questo metodo per mostrare num.el. train-test
         
         elif dataframe == 'test':
           if self._config.get('initialize_from_scratch'):
-            log.info('\nShowing samples distribution of test set')
+            print('\nShowing samples distribution of test set')
             counts = Counter(self._test_df[self.label_col])
         
         else:
-          log.info(f'\nError in Dataset.count_classes(). Input values: dataframe. Expected one from [main,training,test], got {dataframe} instead.\n Showing values for the entire dataset.')
+          print(f'\nError in Dataset.count_classes(). Input values: dataframe. Expected one from [main,training,test], got {dataframe} instead.\n Showing values for the entire dataset.')
           counts = Counter(self._df[self.label_col])
         
         if counts:
           for label, count in counts.items():
-              log.info(f"Class '{label}': {count} elements")
+              print(f"Classe '{label}': {count} elementi")
           return dict(counts)
 
     def __encode_labels(self, mapping=None):
-        """
-          Map labels to integers.
-          Input:
-            - mapping (dict): Optional, explicit map {label: integer}. Only required for the TESS Tey2023 dataset..
+        """Mappa le etichette in interi.
+        Input:
+        - mapping (dict): opzionale, mappa esplicita {etichetta: intero}. Necessario solo per il dataset TESS Tey2023.
         """
         if mapping:
             # Code executed for tess_tey2023. Converting categorical labels to integer values according to the input mapping
@@ -166,36 +164,30 @@ class Dataset:
             self.label_encoder        = LabelEncoder()
             self._df[self.label_col]  = self.label_encoder.fit_transform(self._df[self.label_col])
             self.label_mapping        = dict(zip(self.label_encoder.classes_, self.label_encoder.transform(self.label_encoder.classes_)))
-        log.info("Mapping the labels:", self.label_mapping)
+        print("Mapping the labels:", self.label_mapping)
 
     def __get_training_test_filename(self):
-        """
-          Automatically define the output filenames for training-test split
-        """
+        """Automatically define the output filenames for training-test split"""
         dataset_name   = (self.__dataset_hyperparameters_object._dataset_filename).split('.csv')[0]
         train_filename = f'{dataset_name}_train_split'
         test_filename  = f'{dataset_name}_test_split'
         return train_filename, test_filename
 
     def __split(self, test_size=0.2, random_state=42):
-        """
-          Create a balanced train/test split based on labels.
-        """
+        """Crea uno split bilanciato train/test basato sulle etichette."""
         stratify_labels   = self._df[self.label_col]
         train_df, test_df = train_test_split(self._df, test_size=test_size, random_state=random_state, stratify=stratify_labels)
         
         return train_df.reset_index(drop=True), test_df.reset_index(drop=True)  
 
     def __save_split_as_csv(self):
-        """
-          Save the training and test set splits
-        """
+        """Salva gli split di training e test set"""
         train_filename, test_filename   = self.__get_training_test_filename()
 
         self._train_df.to_csv(PathConfigDataset.SPLIT / f'{train_filename}.csv', index=False)
         self._test_df.to_csv(PathConfigDataset.SPLIT / f'{test_filename}.csv', index=False)
 
-        log.info(f"\nSaved csv splits into:\n- {PathConfigDataset.SPLIT / f'{train_filename}.csv'}\n- {PathConfigDataset.SPLIT / f'{test_filename}.csv'}")
+        print(f"\nSaved csv splits into:\n- {PathConfigDataset.SPLIT / f'{train_filename}.csv'}\n- {PathConfigDataset.SPLIT / f'{test_filename}.csv'}")
 
     def __df_to_format(self, df, shuffle=False):
         """
@@ -239,24 +231,23 @@ class Dataset:
         torch.save((self.__X_train, self.__y_train), PathConfigDataset.TENSORS / f'{train_filename}.pt')
         torch.save((self.__X_test, self.__y_test), PathConfigDataset.TENSORS / f'{test_filename}.pt')
 
-        log.info(f"\nSaved tensors into:\n- {PathConfigDataset.TENSORS / f'{train_filename}.pt'}\n- {PathConfigDataset.TENSORS / f'{test_filename}.pt'}")
+        print(f"\nSaved tensors into:\n- {PathConfigDataset.TENSORS / f'{train_filename}.pt'}\n- {PathConfigDataset.TENSORS / f'{test_filename}.pt'}")
     
     def __print_tensor_shapes(self):
-        """
-          Print the dimensions of the training and testing tensors.
-        """
+        """Stampa le dimensioni dei tensori di training e test."""
         if self.__X_train is not None and self.__X_test is not None:
-            log.info('\nShowing train-test tensors shape:')
-            log.info(f"X_train: {self.__X_train.shape}, y_train: {self.__y_train.shape}")
-            log.info(f"X_test:  {self.__X_test.shape}, y_test:  {self.__y_test.shape}")
+            print('\nShowing train-test tensors shape:')
+            print(f"X_train: {self.__X_train.shape}, y_train: {self.__y_train.shape}")
+            print(f"X_test:  {self.__X_test.shape}, y_test:  {self.__y_test.shape}")
         else:
-            log.info("\n[!] Tensors have not been generated yet. You should call this method: save_as_tensors().")
+            print("\n[!] Tensors have not been generated yet. You should call this method: save_as_tensors().")
 
     def __load_tensors(self, catalog_name):
       """
-        Loads train-test splits of a given catalog in PyTorch tensor format (.pt)
-        Input:
-            catalog_name (str): Catalog name. Allowed values:
+        Carica train-test split di un dato catalogo in formato tensori PyTorch (.pt)
+
+        Args:
+            catalog_name (str): Nome del catalogo. Valori ammessi:
                 'kepler_dr24', 'kepler_dr25', 'tess_tey23', 'plato_flux_original', 'plato_flux_zeromedian'
       """
       catalog_paths = {
@@ -292,13 +283,13 @@ class Dataset:
       self.__X_train, self.__y_train      = torch.load(train_tensor_path)
       self.__X_test, self.__y_test        = torch.load(test_tensor_path)
 
-      log.info("\n[✓] Tensors loaded successfully.")
+      print("\n[✓] Tensors loaded successfully.")
 
     """
     NOTE. Old. C-oriented
     def __load_tensors(self, catalog_name):
       ###
-      #  Loads train-test splits of a given catalog in PyTorch tensor format (.pt)
+      #  Carica train-test split di un dato catalogo in formato tensori PyTorch (.pt)
       #  Input:
       #    - catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23'
       ###
@@ -328,7 +319,7 @@ class Dataset:
       self.__X_train, self.__y_train  = torch.load(train_tensor_path)
       self.__X_test, self.__y_test    = torch.load(test_tensor_path)
 
-      log.info("\nTensors loaded successfully")
+      print("\nTensors loaded successfully")
     """
 
     def __save_split_as_numpy(self, shuffle_train=True):
@@ -348,16 +339,16 @@ class Dataset:
         np.save(PathConfigDataset.NUMPY / f'{test_filename}_features.npy', self.__X_test)
         np.save(PathConfigDataset.NUMPY / f'{test_filename}_labels.npy', self.__y_test)
 
-        log.info(f"\nSaved numpy arrays into:\n- {PathConfigDataset.NUMPY / f'{train_filename}_*.npy'}\n- {PathConfigDataset.NUMPY / f'{test_filename}_*.npy'}")
+        print(f"\nSaved numpy arrays into:\n- {PathConfigDataset.NUMPY / f'{train_filename}_*.npy'}\n- {PathConfigDataset.NUMPY / f'{test_filename}_*.npy'}")
 
     def get_training_test_samples(self):
       return self.__X_train, self.__y_train, self.__X_test, self.__y_test
     
     def get_training_data_loader(self, batch_size):
       """
-        Creates a dataset by combining inputs and labels. This method is used by the Model class during training to iterate over the samples.
+        Crea un dataset combinando input e label. Metodo utilizzato dalla classe Model durante il training, per iterare sui campioni.
         Output:
-          - DataLoader to iterate in batches of size of your choice.
+          - DataLoader per iterare in batch di size a tua scelta.
       """
       train_dataset = TensorDataset(self.__X_train, self.__y_train)
       return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
@@ -383,7 +374,245 @@ class Dataset:
       return self.__dataset_hyperparameters_object._catalog_name
 
     def __del__(self):
-      log.info('\nDestructor called for the class Dataset.')
+      print('\nDestructor called for the class Dataset.')
+
+class TensorDataHandler:
+    """
+      Classe che definisce le operazioni comuni da applicare sui tensori.
+      #NOTE. Sviluppo futuro, far ereditare a Dataset i metodi e gli attributi di TensorDataset e verificare la
+              corretta integrazione facendo test sul main di dataset ed in feature_extractor.py. 
+    """
+    def __init__(self):
+      self._X_train = None                     # Training set: PyTorch tensor / numpy.ndarray (classifier.py)
+      self._y_train = None
+      self._X_test = None                      # Test set: PyTorch tensor / numpy.ndarray (classifier.py)
+      self._y_test = None
+      print('Constructor of TensorDataHandler')
+
+    def _print_tensor_shapes(self):
+      """Stampa le dimensioni dei tensori di training e test."""
+      if self._X_train is not None and self._y_train is not None:
+          print('\nShowing train tensors shape:')
+          print(f"X_train: {self._X_train.shape}, y_train: {self._y_train.shape}")
+      if self._X_test is not None:
+        if self._y_test is not None:
+          print(f"X_test:  {self._X_test.shape}, y_test:  {self._y_test.shape}")
+        else:
+          print(f"X_test:  {self._X_test.shape}")
+
+    def get_training_test_samples(self):
+      return self._X_train, self._y_train, self._X_test, self._y_test
+    
+    def get_y_train(self):
+      return self._y_train
+
+    def get_training_data_loader(self, batch_size, dispositions = None):
+      """
+        Crea un dataset combinando input e label. Metodo utilizzato dalla classe Model durante il training, per iterare sui campioni.
+        Output:
+          - DataLoader per iterare in batch di size a tua scelta.
+      """
+      if dispositions is not None:
+        assert len(dispositions) == len(self._X_train), "[!] dispositions deve avere la stessa lunghezza di X_train"
+
+        # Shuffle coerente su X, y e dispositions
+        
+        indices = torch.randperm(len(self._X_train))
+        x_shuffled = self._X_train[indices]
+        y_shuffled = self._y_train[indices]
+        dispositions_shuffled = torch.tensor(dispositions, dtype=torch.long)[indices]
+        
+        train_dataset = TensorDataset(x_shuffled, y_shuffled, dispositions_shuffled)
+        
+        #train_dataset = TensorDataset(self._X_train, self._y_train, torch.tensor(dispositions, dtype=torch.long))
+        return DataLoader(train_dataset, batch_size = batch_size, shuffle = False)
+      
+      else:
+        train_dataset = TensorDataset(self._X_train, self._y_train)
+        return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
+    
+    def get_test_data_loader_with_labels(self, batch_size = 128):
+      # Analogo di get_training_data_loader, con test set.
+      assert self._y_test is not None, "[!] y_test is None. Cannot create DataLoader with labels."
+      test_dataset = TensorDataset(self._X_test, self._y_test)
+      return DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
+    
+    def get_test_data_loader(self, batch_size = 128):
+      # When projecting features from test set with MLP, you don't need self._y_test
+      test_dataset = TensorDataset(self._X_test)
+      return DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
+
+    def get_training_test_set_length(self, split='train'):
+      if split == 'train':
+        return len(self._X_train)
+      else:
+        return len(self._X_test)
+    
+    def get_training_test_set_labels(self, split='train'):
+      if split == 'train':
+        return self._y_train
+      else:
+        return self._y_test
+
+    def set_x_y_train(self, x_train, y_train):
+      """Inizializza i tensori X_train e y_train da classi figlie"""
+      self._X_train = x_train
+      self._y_train = y_train
+    
+    def set_x_y_test(self, x_test, y_test = None):
+      self._X_test = x_test
+      self._y_test = y_test
+
+    def __del__(self):
+      print('\nDestructor called for the class TensorDataset')
+
+
+class DatasetMLP(TensorDataHandler):
+    def __init__(self, mode, dataset_conf, training_conf = None):
+      """
+        Classe che definisce le operazioni da applicare sui vettori di caratteristiche prima di processarli tramite il MLP.
+        Input:
+          - mode: train or test
+          - dataset_conf: oggetto della classe DatasetConfig in mlp_class.py che contiene,
+                      filename_samples: features estratte dalla CNN, in data/features_step1_cnn/
+                      filename_labels: la rappresentazione 2D di queste features, ottenuta con t-SNE. data/features_step2_tsne/
+                      filename_dispositions: le etichette associate ai feature vectors, in data/features_step1_cnn/
+      """
+      super().__init__()
+      print('Constructor of DatasetMLP')
+      self.__dataset_conf = dataset_conf
+      self.__training_conf = training_conf
+      self.__mode = mode
+
+      self.__disposition_array = []   # <class 'torch.Tensor'>
+
+      if mode == 'train':
+        # Init data structures for training the MLP
+        self.__x_train_numpy = []
+        self.__x_train_numpy_norm = []
+        self.__y_train_numpy = []       # Store the t-SNE two-dimensional coordinates
+        self.__y_train_numpy_norm = []
+        # Loading and preprocessing
+        self.__load_training_data()
+        self.__normalize_data()
+        self.__init_training_tensors()        
+      else:
+        self.__x_test_numpy = []
+        self.__x_test_numpy_norm = []
+        self.__load_test_data()
+        self.__normalize_data(normalize_labels = False)
+        self.__init_testset_tensors()
+      
+      self.__load_dispositions()
+
+      super()._print_tensor_shapes()
+      
+    
+    def __load_training_data(self):
+      """
+        Carica i numpy.ndarray (self.__x_train_numpy, y_train_numpy) da features_step1_cnn/ e features_step2_tsne/, rispettivamente.
+        Questi vettori consistono in (a) ed (e) della figura in Sezione 2025-06-12 del Google Doc.
+      """
+      self.__x_train_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_samples)
+      self.__y_train_numpy = np.load(GlobalPaths.FEATURES_STEP2_TSNE / self.__dataset_conf.filename_labels)
+    
+    def __load_test_data(self):
+      """
+        Carica il numpy.ndarray (self.__x_test_numpy) da features_step1_cnn/.
+        Questo vettore consiste in (c) della figura in Sezione 2025-06-12 del Google Doc.
+      """
+      self.__x_test_numpy = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_samples)
+
+    def __load_dispositions(self):
+      """
+        Carica le disposizioni associate ai vettori di caratteristiche. Queste disposizioni corrispondono
+        ai file in features_step1_cnn/ di nome '*_labels.npy'.
+        Ricorda che qui x = feature vector, y = feature vector proiettato in spazio 2d (da tsne).
+      """ 
+      self.__disposition_array = np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_dispositions)
+
+    def __normalize_data(self, normalize_labels = True):
+        """
+          Normalize data to zero mean and unit variance
+        """
+        epsilon = 1e-8  # offset to improve numerical stability. This prevents division by zero for features with zero std
+        if self.__mode == 'train':
+          self.__x_train_numpy_norm = (self.__x_train_numpy - self.__x_train_numpy.mean()) / (self.__x_train_numpy.std() + epsilon )
+          
+          if self.__y_train_numpy is not None and normalize_labels:
+              self.__y_train_numpy_norm = (self.__y_train_numpy - self.__y_train_numpy.mean()) / (self.__y_train_numpy.std() + epsilon)
+          else:
+              self.__y_train_numpy_norm = self.__y_train_numpy
+        else:
+          self.__x_test_numpy_norm = (self.__x_test_numpy - self.__x_test_numpy.mean()) / (self.__x_test_numpy.std() + epsilon)
+        
+    def __init_training_tensors(self):
+      """Converti in tensore i dati normalizzati ed inizializza (_X_train, _y_train) della classe TensorDataHandler"""
+      super().set_x_y_train( torch.tensor(self.__x_train_numpy_norm, dtype=torch.float32), torch.tensor(self.__y_train_numpy_norm, dtype=torch.float32) )
+    
+    def __init_testset_tensors(self):
+      """Converti in tensore i dati normalizzati ed inizializza (_X_test) della classe TensorDataHandler"""
+      super().set_x_y_test( torch.tensor(self.__x_test_numpy_norm, dtype=torch.float32) )
+
+
+    def get_training_data_loader(self):
+      return super().get_training_data_loader(
+        batch_size = self.__training_conf.batch_size,
+        dispositions = self.__disposition_array
+        )
+    
+    def get_test_data_loader(self):
+      return super().get_test_data_loader()
+
+    def set_dispositions(self, dispositions):
+      self.__disposition_array = dispositions #type dispositions = <class 'torch.Tensor'>
+
+    def get_dispositions(self):
+      #print(f'[DEBUGGING] get_dispositions(). type disposition_numpy = {type(self.__disposition_array)}')
+      return self.__disposition_array         #type dispositions = <class 'torch.Tensor'>
+
+    def __del__(self):
+      print('\nDestructor called for the class DatasetMLP')
+    
+
+class DatasetClassifier(TensorDataHandler):
+    def __init__(self, classifier_hyperparameters_object):
+      super().__init__()
+
+      self.__dataset_conf = classifier_hyperparameters_object._dataset
+
+      if classifier_hyperparameters_object._classifier.mode == 'train':
+        self.__load_training_data()
+      
+      elif classifier_hyperparameters_object._classifier.mode == 'test':
+        self.__load_test_data()
+      
+      else:
+        raise ValueError(f'In DatasetClassifier, mode. Got {classifier_hyperparameters_object._classifier.mode}, but expect "train" or "test"')
+
+      super()._print_tensor_shapes()
+
+    def __load_training_data(self):
+      """
+        Carica i numpy.ndarray (x_train, y_train) da features_step2_mlp/.
+      """
+      super().set_x_y_train(
+        np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_samples),
+        np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_labels).astype(int)
+      )
+    
+    def __load_test_data(self):
+      """
+        Carica i numpy.ndarray (x_test, y_test) da features_step2_mlp/.
+      """
+      super().set_x_y_test(
+        np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_samples),
+        np.load(GlobalPaths.FEATURES_STEP2_MLP / self.__dataset_conf.filename_labels).astype(int)
+      )
+        
+    def __del__(self):
+      print('\nDestructor called for the class DatasetMLP')
+      
 
 if __name__ == "__main__":
   df = pd.read_csv('/Users/stefanofisc/Desktop/exoplanets/main/data/main_datasets/csv_format/plato_FittedEvents_phaseflux_original_multiclass.csv')

@@ -2,7 +2,6 @@ import logging
 from colorama import Fore, Style, init
 
 # Example
-# log = Logger(level=logging.DEBUG)
 # log.info("info xample")
 # log.debug("debug xample")
 # log.warning("warning xample")
@@ -60,3 +59,5 @@ class Logger:
 
     def critical(self, message):
         self.logger.critical(message)
+
+log = Logger(level=logging.DEBUG)
