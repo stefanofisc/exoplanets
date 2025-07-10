@@ -4,4 +4,4 @@ dataset:
 
 embedding:
   algorithm:    'isomap'  # isomap, lle, mdscal, ...
-  n_components: 3
+  n_components: 2

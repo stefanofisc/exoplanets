@@ -1,6 +1,10 @@
-from torch.utils.data import TensorDataset, DataLoader
-import torch
-from utils.logger import log
+import  sys
+import  torch
+from    torch.utils.data  import  TensorDataset, DataLoader
+from    pathlib           import  Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
+from    logger            import  log
 
 class TensorDataHandler:
     """
@@ -13,7 +17,7 @@ class TensorDataHandler:
       self._y_train = None
       self._X_test = None                      # Test set: PyTorch tensor / numpy.ndarray (classifier.py)
       self._y_test = None
-      print('Constructor of TensorDataHandler')
+      log.info('Constructor of TensorDataHandler')
 
     def _print_tensor_shapes(self):
       """

@@ -198,4 +198,5 @@ class ManifoldLearning:
 if __name__ == '__main__':
     m = ManifoldLearning()
     m.project_data()
-    m.plot_projected_data_interactive_html()
+    m.plot_projected_data()
+    #m.plot_projected_data_interactive_html()

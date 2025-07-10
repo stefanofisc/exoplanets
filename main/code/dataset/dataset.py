@@ -72,7 +72,7 @@ class Dataset:
       # End of basic initialization, common to all modules using this class
 
       if self.__dataset_hyperparameters_object._initialize_from_scratch == True:
-        log.info("Initializing from scratch...")
+        log.debug("Initializing from scratch...")
         # Questa parte viene eseguita se e solo se l'oggetto Dataset viene istanziato al fine di processare un nuovo pandas DataFrame
         # Mapping the labels (categorical or numerical)
         if self.__dataset_hyperparameters_object._mapping is not None:
@@ -101,7 +101,7 @@ class Dataset:
             raise ValueError(f'Got {format} as format. Accepted values: csv, tensor, numpy.')
 
       elif self.__dataset_hyperparameters_object._load_tensors == True:
-        log.info('Loading tensors...')
+        log.debug('Loading tensors...')
         self.__load_tensors(catalog_name = self.__dataset_hyperparameters_object._catalog_name)
       
       else:
@@ -166,7 +166,7 @@ class Dataset:
             self.label_encoder        = LabelEncoder()
             self._df[self.label_col]  = self.label_encoder.fit_transform(self._df[self.label_col])
             self.label_mapping        = dict(zip(self.label_encoder.classes_, self.label_encoder.transform(self.label_encoder.classes_)))
-        log.info("Mapping the labels:", self.label_mapping)
+        log.debug(f"Mapping the labels: {self.label_mapping}")
 
     def __get_training_test_filename(self):
         """
@@ -250,7 +250,7 @@ class Dataset:
             log.info(f"X_train: {self.__X_train.shape}, y_train: {self.__y_train.shape}")
             log.info(f"X_test:  {self.__X_test.shape}, y_test:  {self.__y_test.shape}")
         else:
-            log.info("\n[!] Tensors have not been generated yet. You should call this method: save_as_tensors().")
+            log.warning("\n[!] Tensors have not been generated yet. You should call this method: save_as_tensors().")
 
     def __load_tensors(self, catalog_name):
       """
@@ -386,5 +386,4 @@ class Dataset:
       log.info('\nDestructor called for the class Dataset.')
 
 if __name__ == "__main__":
-  df  = pd.read_csv(PathConfigDataset.CSV / 'plato_FittedEvents_phaseflux_original_multiclass.csv')
-  d   = Dataset(df)
+   log.info('Dataset class')
