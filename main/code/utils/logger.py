@@ -1,5 +1,5 @@
-import logging
-from colorama import Fore, Style, init
+import  logging
+from    colorama    import Fore, Style, init
 
 # Example
 # log.info("info xample")

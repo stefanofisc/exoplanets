@@ -4,15 +4,11 @@
     
     This file analyzes the content of the file: sim00465_06899_AllParameters.ftr
 """
-import  sys
 import  pandas          as      pd
 import  numpy           as      np
 from    collections     import  Counter
 from    pathlib         import  Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from    utils           import  GlobalPaths
-from    logger          import  Logger
+from    dataset         import  GlobalPaths, log
 
 class DatasetAllParameters:
     def __init__(self, filepath):
@@ -20,8 +16,8 @@ class DatasetAllParameters:
             Classe per processare tabelle memorizzate in feather file (.ftr)
             Costruttore per inizializzare l'oggetto DatasetAllParameters e carica il DataFrame da file .ftr
         """
-        self.__df = pd.read_feather(filepath)
-        self.__log = Logger()
+        self.__df   = pd.read_feather(filepath)
+        self.__log  = log
         
         self.__signal_type_values = []
         self.__init_signal_type_values()

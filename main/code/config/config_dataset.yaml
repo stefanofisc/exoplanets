@@ -19,7 +19,7 @@ initialize_from_scratch: False
 #  J: 2
 
 # Opzionale. Percentuale di dati da destinare al test set (float in (0, 1)). Irrilevante se setti load_tensors=True
-test_size: 0.2
+#test_size: 0.2
 
 # Opzionale. Scegli se splittare il dataframe in train-test, e se salvarli in csv, TensorDataset o numpy.ndarray
 dataset_save_split_format: 'tensor' # csv, tensor, numpy

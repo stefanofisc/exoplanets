@@ -1,12 +1,6 @@
-import  sys
-#import  pandas      as      pd
-import  numpy       as      np
-from    dataset     import  TensorDataHandler
-from    pathlib     import  Path
-
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from    utils       import  GlobalPaths
+import  numpy               as      np
+from    dataset             import  GlobalPaths, log
+from    tensor_data_handler import  TensorDataHandler
 
 class DatasetManifoldLearning(TensorDataHandler):
     def __init__(self, manifold_learning_dataset_hyperparameters_object = None):
@@ -54,4 +48,4 @@ def save_signals_and_labels(df, label_column='signal_type', signal_outfile='plat
 """
 
 if __name__ == '__main__':
-    print('dataset manifold learning')
+    log.info('dataset manifold learning')

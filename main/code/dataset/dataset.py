@@ -10,10 +10,10 @@ from    collections             import  Counter
 from    pathlib                 import  Path
 from    dataclasses             import  dataclass
 from    typing                  import  Optional
-from    utils.logger            import  log
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from    utils                   import  GlobalPaths
+from    logger                  import  log
 
 class PathConfigDataset:
     # Collection of input variables shared among the modules
@@ -50,7 +50,7 @@ class InputVariablesDatasetCSV:
             )
 
 class Dataset:
-    def __init__(self, dataframe):#, config):
+    def __init__(self, dataframe):
       """
         Dataset class constructor.
         Input:
@@ -64,7 +64,6 @@ class Dataset:
       self.__X_test   = None                          # Test set: PyTorch tensor
       self.__y_test   = None
 
-      ### self._config        = config
       self.__dataset_hyperparameters_object = self.__init_dataset_hyperparameters()
 
       self.label_col      = self._df.columns[-1]   # Last column of dataframe must be the TCE label
@@ -101,14 +100,15 @@ class Dataset:
           else:
             raise ValueError(f'Got {format} as format. Accepted values: csv, tensor, numpy.')
 
-          self.__print_tensor_shapes()
-
       elif self.__dataset_hyperparameters_object._load_tensors == True:
         log.info('Loading tensors...')
         self.__load_tensors(catalog_name = self.__dataset_hyperparameters_object._catalog_name)
       
       else:
         raise ValueError('[!] initialize_from_scratch or load_tensors must be True')
+      
+      self.__print_tensor_shapes()
+      # End constructor
 
     def __init_dataset_hyperparameters(self):
        return InputVariablesDatasetCSV.get_input_hyperparameters(GlobalPaths.CONFIG / GlobalPaths.config_dataset_csv_file)
@@ -138,7 +138,7 @@ class Dataset:
             self.__print_tensor_shapes()  # se invece stai lavorando con tensori, chiama questo metodo per mostrare num.el. train-test
         
         elif dataframe == 'test':
-          if self._config.get('initialize_from_scratch'):
+          if self.__dataset_hyperparameters_object._initialize_from_scratch:
             log.info('\nShowing samples distribution of test set')
             counts = Counter(self._test_df[self.label_col])
         
@@ -386,5 +386,5 @@ class Dataset:
       log.info('\nDestructor called for the class Dataset.')
 
 if __name__ == "__main__":
-  df = pd.read_csv('/Users/stefanofisc/Desktop/exoplanets/main/data/main_datasets/csv_format/plato_FittedEvents_phaseflux_original_multiclass.csv')
-  d = Dataset(df)
+  df  = pd.read_csv(PathConfigDataset.CSV / 'plato_FittedEvents_phaseflux_original_multiclass.csv')
+  d   = Dataset(df)

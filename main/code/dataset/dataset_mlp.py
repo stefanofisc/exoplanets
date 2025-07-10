@@ -1,8 +1,7 @@
-from tensor_data_handler import TensorDataHandler
-from dataset import GlobalPaths
-import numpy as np
-import torch
-from utils.logger import log
+import  torch
+import  numpy               as      np
+from    tensor_data_handler import  TensorDataHandler
+from    dataset             import  GlobalPaths, log
 
 class DatasetMLP(TensorDataHandler):
     def __init__(self, mode, dataset_conf, training_conf = None):

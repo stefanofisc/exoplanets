@@ -1,7 +1,6 @@
-from tensor_data_handler import TensorDataHandler
-from dataset import GlobalPaths
-import numpy as np
-from utils.logger import log
+import  numpy               as      np
+from    tensor_data_handler import  TensorDataHandler
+from    dataset             import  GlobalPaths, log
 
 class DatasetClassifier(TensorDataHandler):
     def __init__(self, classifier_hyperparameters_object):
