@@ -17,7 +17,9 @@ class GlobalPaths:
     OUTPUT_FILES        = MAIN / 'output_files'                     # main/output_files/
     TRAINED_MODELS      = MAIN / 'trained_models'                   # main/trained_models/
     # data/
-    CSV                 = DATA / 'main_datasets' / 'csv_format'
+    MAIN_DATASETS       = DATA / 'main_datasets'
+    CSV                 = MAIN_DATASETS / 'csv_format'
+    DATA_NUMPY          = MAIN_DATASETS / 'numpy_format_split_80_20'
     FEATURES_STEP1_CNN  = DATA / 'features_step1_cnn'
     FEATURES_STEP2_TSNE = DATA / 'features_step2_tsne'
     FEATURES_STEP2_MLP  = DATA / 'features_step2_mlp'

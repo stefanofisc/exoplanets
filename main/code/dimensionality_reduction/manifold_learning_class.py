@@ -1,11 +1,13 @@
 import  yaml
 import  sys
+import  pandas              as      pd
 import  matplotlib.pyplot   as      plt
-from    mpl_toolkits.mplot3d import Axes3D  # Necessario per il plot 3D
+import  plotly.express      as      px
 from    sklearn.manifold    import  Isomap
 from    dataclasses         import  dataclass
 from    pathlib             import  Path
-from    typing              import  List, Optional
+from    typing              import  Optional
+
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from    utils               import  GlobalPaths, get_today_string
@@ -149,6 +151,44 @@ class ManifoldLearning:
         plt.close()
         print(f"[✓] Proiezione {n_components}D salvata in: {filepath}")
 
+    def plot_projected_data_interactive_html(self):
+        """
+            Save an interactive 3D plot (with zoom and rotation) in .html format. The plot will be
+            opened in your browser.
+        """
+        today           = get_today_string()
+        n_components    = self.__manifold_learning_hyperparameters_object._embedding.n_components
+        algorithm       = self.__manifold_learning_hyperparameters_object._embedding.algorithm
+        _, labels, *_   = self.__dataset.get_training_test_samples()
+
+        if n_components != 3:
+            raise ValueError("[!] This method is intended for 3D projection only (n_components = 3)")
+
+        projected = self.__projected_features
+        df = pd.DataFrame({
+            'Component 1': projected[:, 0],
+            'Component 2': projected[:, 1],
+            'Component 3': projected[:, 2],
+            'Label': labels
+        })
+
+        fig = px.scatter_3d(
+            df,
+            x='Component 1',
+            y='Component 2',
+            z='Component 3',
+            color='Label',
+            opacity=0.7,
+            title=f'{algorithm.upper()} Projection (3D)'
+        )
+
+        filename = f'{today}_{algorithm}_3d_projection.html'
+        filepath = GlobalPaths.OUTPUT_FILES / GlobalPaths.PLOT_MANIFOLD_LEARNING / filename
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        fig.write_html(str(filepath))  # salva file .html
+
+        print(f"[✓] Plot 3D interattivo salvato in: {filepath}")
+
     def save_projected_data(self):
         pass
 
@@ -158,4 +198,4 @@ class ManifoldLearning:
 if __name__ == '__main__':
     m = ManifoldLearning()
     m.project_data()
-    m.plot_projected_data()
+    m.plot_projected_data_interactive_html()

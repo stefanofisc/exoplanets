@@ -1,7 +1,7 @@
 dataset:
-  filename_samples: 'plato_FittedEvents_global_view_original_tdepth_features.npy' # <light curve, id, label>
-  filename_labels:  'plato_FittedEvents_global_view_original_tdepth_labels.npy'    # Optional    
+  filename_samples: 'plato_FittedEvents_phaseflux_original_multiclass_train_split_features.npy' # <light curve, id, label>
+  filename_labels:  'plato_FittedEvents_phaseflux_original_multiclass_train_split_labels.npy'    # Optional    
 
 embedding:
   algorithm:    'isomap'  # isomap, lle, mdscal, ...
-  n_components: 2
+  n_components: 3
