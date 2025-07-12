@@ -22,7 +22,7 @@ initialize_from_scratch: False
 test_size: 0.2
 
 # Opzionale. Scegli se splittare il dataframe in train-test, e se salvarli in csv, TensorDataset o numpy.ndarray
-dataset_save_split_format: 'numpy' # csv, tensor, numpy
+#dataset_save_split_format: 'numpy' # csv, tensor, numpy
 
 # Scegli se caricare direttamente i file di input in formato tensoriale
 load_tensors:   True

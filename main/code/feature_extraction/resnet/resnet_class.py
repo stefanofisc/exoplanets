@@ -1,27 +1,24 @@
 # He, K. et al. (2016). Deep Residual Learning for Image Recognition.
 # Source code: https://www.digitalocean.com/community/tutorials/writing-resnet-from-scratch-in-pytorch
 # Code adapted to allow the network to process one-dimensional signals of shape (1,201,1)
-import torch
-import torch.nn as nn
-import yaml
-import sys
-from dataclasses import dataclass
-from ptflops import get_model_complexity_info
-from pathlib import Path
+import  torch
+import  torch.nn    as nn
+import  yaml
+import  sys
+from    dataclasses import dataclass
+from    ptflops     import get_model_complexity_info
+from    pathlib     import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'utils'))
-from utils import GlobalPaths, get_device
-
-# Device configuration
-#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+from    utils       import GlobalPaths, get_device
 
 @dataclass
 class InputVariablesResnet:
     # Model hyperparameters
     _resnet_layers_num: int
-    _fc_layers_num: int
-    _fc_units: int
-    _fc_output_size: int
+    _input_size:        int
+    _fc_layers_num:     int
+    _fc_output_size:    int
 
     @classmethod
     def get_input_hyperparameters(cls, filename):
@@ -37,20 +34,23 @@ class InputVariablesResnet:
             config = yaml.safe_load(file)
 
         return cls(
-            _resnet_layers_num=config['resnet_layers_num'],
-            _fc_layers_num=config['fc_layers_num'],
-            _fc_units=config['fc_units'],
-            _fc_output_size=config['fc_output_size'],
+            _resnet_layers_num  = config['resnet_layers_num'],
+            _input_size         = config['input_size'],
+            _fc_layers_num      = config['fc_layers_num'],
+            _fc_output_size     = config['fc_output_size'],
             )
     
     def get_resnet_layers_num(self):
       return self._resnet_layers_num
 
+    def get_input_size(self):
+        return self._input_size
+
     def get_fc_layers_num(self):
         return self._fc_layers_num
 
-    def get_fc_units(self):
-        return self._fc_units
+    #def get_fc_units(self):
+    #    return self._fc_units
 
     def get_fc_output_size(self):
         return self._fc_output_size
@@ -89,7 +89,7 @@ class ResNet(nn.Module):
         Resnet-34 architecture. Figure 3 (34-layer residual). Here, the network is
         intended to process 1D signals.
     """
-    def __init__(self, block, num_layers, fc_units = 512, output_size = 3):
+    def __init__(self, block, num_layers, input_size = 500, output_size = 3):
         super(ResNet, self).__init__()
         # Set the architecture based on the number of layers given as input
         if num_layers == 18:
@@ -101,20 +101,27 @@ class ResNet(nn.Module):
         
         self.inplanes = 64
         self.__feature_vector = []
-        input_channels = 1  # as you process global views (which size is [1, 201, 1])
+        #input_channels = 1  as you process global views (which size is [1, n, 1])
         # 7 x 1 convolution, halving the input dimension (stride = 2)
         self.conv1 = nn.Sequential(
             nn.Conv1d(1, 64, kernel_size = 7, stride = 2, padding = 3),
             nn.BatchNorm1d(64),
             nn.ReLU()
         )
-        self.maxpool = nn.MaxPool1d(kernel_size = 3, stride = 2, padding = 1)
-        self.layer0 = self._make_layer(block, 64, layers[0], stride = 1)
-        self.layer1 = self._make_layer(block, 128, layers[1], stride = 2)
-        self.layer2 = self._make_layer(block, 256, layers[2], stride = 2)
-        self.layer3 = self._make_layer(block, 512, layers[3], stride = 2)
-        self.avgpool = nn.AvgPool1d(7, stride=1)
-        self.fc = nn.Linear(fc_units, output_size)
+        self.maxpool    = nn.MaxPool1d(kernel_size = 3, stride = 2, padding = 1)
+        self.layer0     = self._make_layer(block, 64, layers[0], stride = 1)
+        self.layer1     = self._make_layer(block, 128, layers[1], stride = 2)
+        self.layer2     = self._make_layer(block, 256, layers[2], stride = 2)
+        self.layer3     = self._make_layer(block, 512, layers[3], stride = 2)
+        self.avgpool    = nn.AvgPool1d(7, stride=1)
+
+        #if fc_units is None:
+        with torch.no_grad():
+            dummy_input = torch.rand(1, 1, input_size)  # batch=1, canale=1, lunghezza=input_length
+            out         = self._forward_features(dummy_input)
+            fc_units    = out.shape[1]
+        
+        self.fc         = nn.Linear(fc_units, output_size)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -131,7 +138,9 @@ class ResNet(nn.Module):
         
         return nn.Sequential(*layers)
     
-    def forward(self, x):
+
+    def _forward_features(self, x):
+        #x = x.unsqueeze(1)
         x = self.conv1(x)
         x = self.maxpool(x)
         x = self.layer0(x)
@@ -140,8 +149,23 @@ class ResNet(nn.Module):
         x = self.layer3(x)
 
         x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        return x
+
+    def forward(self, x):
+        #NOTE DEBUG EXPERIMENTAL
+        """ Ora in _forward_features
+        x = self.conv1(x)
+        x = self.maxpool(x)
+        x = self.layer0(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.avgpool(x)
         x = x.view(x.size(0), -1) # flattening
-        self.__feature_vector = x # Save the flattened output of the feature extraction block
+        """
+        x                       = self._forward_features(x)
+        self.__feature_vector   = x # Save the flattened output of the feature extraction block
         x = self.fc(x)
 
         return x
@@ -161,7 +185,7 @@ class ResNet(nn.Module):
           if m.bias is not None:
             nn.init.constant_(m.bias, 0)
     
-    def get_resnet_complexity(self, resnet):
+    def get_resnet_complexity(self, resnet, input_size:int):
         device = get_device()
 
         # Sposta il modello sul device corretto
@@ -170,7 +194,7 @@ class ResNet(nn.Module):
         # ptflops calcola su CPU: sposta temporaneamente su cpu per evitare errori
         resnet_cpu = resnet.to("cpu")
 
-        macs, params = get_model_complexity_info(resnet_cpu, (1, 201), as_strings=True,
+        macs, params = get_model_complexity_info(resnet_cpu, (1, input_size), as_strings=True,
                                         print_per_layer_stat=True, verbose=True)
         print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
         print('{:<30}  {:<8}'.format('Number of parameters: ', params))
@@ -194,16 +218,20 @@ def main_resnet():
     device = get_device()
 
     # Get hyperparameters
-    hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_resnet.yaml')
+    hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(
+        GlobalPaths.CONFIG / GlobalPaths.config_resnet_file)
 
+    """
     # NOTE. Experimental: print hyperparameters
     for field, value in hyperparameters_object.__dict__.items():
         print(f"{field}: {value}")
+    """
     
     # Create the model
     resnet = ResNet(
       ResidualBlock, 
       hyperparameters_object.get_resnet_layers_num(),
+      hyperparameters_object.get_input_size(),
       hyperparameters_object.get_fc_output_size()
       ).to(device)
 

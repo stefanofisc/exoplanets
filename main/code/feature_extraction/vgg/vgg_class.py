@@ -1,26 +1,28 @@
-import yaml
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import sys
-from dataclasses import dataclass
-from ptflops import get_model_complexity_info
-from pathlib import Path
+import  yaml
+import  torch
+import  torch.nn            as nn
+import  torch.nn.functional as F
+import  sys
+from    dataclasses         import dataclass
+from    ptflops             import get_model_complexity_info
+from    pathlib             import Path
+from    typing              import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'utils'))
-from utils import GlobalPaths, get_device
+from    utils               import GlobalPaths, get_device
+from    logger              import log
 
 sys.path.insert(1, str(GlobalPaths.FEATURE_EXTRACTION))
-#from m1_class import ModelInspector
 
 @dataclass
 class InputVariablesVGG19:
     # Model architecture
-    _psz: int
-    _pst: int
-    _fc_layers_num: int
-    _fc_units: int
-    _fc_output_size: int
+    _input_size:      int
+    _psz:             int
+    _pst:             int
+    _fc_layers_num:   int
+    _fc_output_size:  int
+    _fc_units:        Optional[int]
 
     @classmethod
     def get_input_hyperparameters(cls, filename):
@@ -36,12 +38,16 @@ class InputVariablesVGG19:
             config = yaml.safe_load(file)
 
         return cls(            
-            _psz=config['psz'],
-            _pst=config['pst'],
-            _fc_layers_num=config['fc_layers_num'],
-            _fc_units=config['fc_units'],
-            _fc_output_size=config['fc_output_size'],
+            _input_size     = config['input_size'],
+            _psz            = config['psz'],
+            _pst            = config['pst'],
+            _fc_layers_num  = config['fc_layers_num'],
+            _fc_units       = config.get('fc_units',-1),
+            _fc_output_size = config['fc_output_size']
             )
+    
+    def get_input_size(self):
+       return self._input_size
 
     def get_psz(self):
         return self._psz
@@ -60,16 +66,18 @@ class InputVariablesVGG19:
 
 
 class FeatureExtractionVGG19(nn.Module):
-  def __init__(self, psz, pst):
+  def __init__(self, input_size, psz, pst):
     super().__init__()
-    # Define the number of convolutional blocks and the container of these blocks
-    self.__conv_filter_size = 3
-    self.__padding = 'same'
-    self.__pooling_size = psz
-    self.__pooling_stride = pst
-    self.__conv_blocks = nn.ModuleList()
-    self.__flatten = nn.Flatten()
-    self.__output_size = -1
+
+    # Define the structure of convolutional blocks
+    self.__input_size         = input_size
+    self.__conv_filter_size   = 3
+    self.__padding            = 'same'
+    self.__pooling_size       = psz
+    self.__pooling_stride     = pst
+    self.__conv_blocks        = nn.ModuleList()
+    self.__flatten            = nn.Flatten()
+    #self.__output_size        = -1
 
     # Stack the convolutional blocks
     self.__conv_blocks.append( nn.Conv1d(1, 64, self.__conv_filter_size, padding=self.__padding) )
@@ -91,9 +99,13 @@ class FeatureExtractionVGG19(nn.Module):
   def forward(self, x):
       i=0
       # input
-      gv_length = 201
-      x = x.view(-1, 1, gv_length)
-      #print(f'Input tensor information:\n   type:{type(x)}; shape:{x.shape}')
+      #NOTE DEBUG EXPERIMENTAL gv_length = 201 #TBF
+      #NOTE DEBUG EXPERIMENTAL x = x.view(-1, 1, gv_length)
+      x = x.unsqueeze(1)
+      #log.debug(f'Input tensor information:\n   type:{type(x)}; shape:{x.shape}')
+      #if x.shape[-1] == self.__input_size:
+      #   log.debug(f'{x.shape[-1]} == {self.__input_size}')
+      #NOTE END DEBUG EXPERIMENTAL
       # 64
       x = self.__conv_blocks[0](x)
       x = F.relu(x)
@@ -174,10 +186,17 @@ class FeatureExtractionVGG19(nn.Module):
       output = self.__flatten(x)
       return output
 
-
+  """
+  #NOTE DEBUG EXPERIMENTAL
   def get_output_size(self):
-    output = self.forward(torch.rand(1, 201)).size()[1]
+    output = self.forward(torch.rand(1, 201)).size()[1] #TBF
     return output
+  """
+  def get_output_size(self):
+    dummy_input = torch.rand(1, self.__input_size)
+    with torch.no_grad():
+        output = self.forward(dummy_input)
+    return output.size(1)  # dimensione dopo flatten
 
   def print_branch(self):
     print(self.__conv_blocks)
@@ -186,8 +205,8 @@ class FeatureExtractionVGG19(nn.Module):
 class FullyConnectedVGG19(nn.Module):
   def __init__(self, input_size, fc_units, output_size):
     super(FullyConnectedVGG19, self).__init__()
-    self.__fc_units = fc_units
-    self.__fc_layer = nn.Linear(input_size, self.__fc_units)
+    self.__fc_units     = input_size #NOTE DEBUG EXPERIMENTAL fc_units
+    self.__fc_layer     = nn.Linear(input_size, self.__fc_units)
     self.__output_layer = nn.Linear(self.__fc_units, output_size)
 
   def forward(self, x):
@@ -200,14 +219,19 @@ class FullyConnectedVGG19(nn.Module):
 class ClassificationVGG19(nn.Module):
   def __init__(self, input_size, fc_layers_num, fc_units, output_size):
     """
-      To test the functionality of the class:
+      Input:
+        - input_size (int): the number of input neurons, corresponing to the output length of feature extraction block
+        - fc_layers_num (int): number of fully-connected layers
+        - fc_units (int): number of fully-connected neurons in each layer
+        - output_size (int): number of output neurons
+      Example usage for testing the standalone class:
       >>> classification = Classification(768, 4, 1024, 5, 0.3)
       >>> classification.print_branch()
     """
     super(ClassificationVGG19, self).__init__()
-    self.__fc_layers_num = fc_layers_num
-    self.__fc_blocks = nn.ModuleList()
-    self.__feature_extraction_output_size = 2560
+    self.__fc_layers_num                    = fc_layers_num
+    self.__fc_blocks                        = nn.ModuleList()
+    self.__classification_vgg19_input_size  = input_size  #NOTE DEBUG EXPERIMENTAL 2560
 
     if self.__fc_layers_num == 1:
       # Single fully-connected layer which shape is (input x output):(fc_units x output_size)
@@ -233,19 +257,22 @@ class ClassificationVGG19(nn.Module):
     print(self.__fc_blocks)
 
   def get_output_size(self):
-    output = self.forward(torch.rand(1, self.__feature_extraction_output_size)).size()[1]
+    output = self.forward(torch.rand(1, self.__classification_vgg19_input_size)).size()[1]
     return output
 
 
 class VGG19(nn.Module):
-  def __init__(self, psz, pst, fc_layers_num, fc_units, fc_output_size):
+  def __init__(self, input_size, psz, pst, fc_layers_num, fc_units, fc_output_size):
     super(VGG19, self).__init__()
-    self.__feature_extraction_vgg19 = FeatureExtractionVGG19(psz, pst)
-    self.__classification_vgg19 = ClassificationVGG19(self.__feature_extraction_vgg19.get_output_size(), fc_layers_num, fc_units, fc_output_size)
+    self.__feature_extraction_vgg19 = FeatureExtractionVGG19(input_size, psz, pst)
+    self.__classification_vgg19     = ClassificationVGG19(
+       self.__feature_extraction_vgg19.get_output_size(), 
+       fc_layers_num, 
+       fc_units, 
+       fc_output_size
+       )
     # Initialize model's parameters
-    # self.__initializer_xavier_uniform()
     self.__initializer_kaiming()          # 2025-01-27. As vgg struggles in the classification of Kepler Q1-Q17 DR24 multiclass, I try different methods to inizialize model's weights
-
 
   def __initializer_xavier_uniform(self):
     for m in self.modules():
@@ -298,15 +325,20 @@ class VGG19(nn.Module):
 
 def main_vgg():
     # Get hyperparameters
-    hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_vgg.yaml')
+    hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(
+       GlobalPaths.CONFIG / GlobalPaths.config_vgg_file
+       )
 
     # NOTE. Experimental: print hyperparameters
+    """
     print('\nExperimental: print model hyperparameters')
     for field, value in hyperparameters_object.__dict__.items():
         print(f"{field}: {value}")
+    """
     
     # Create the model architecture
     vgg19 = VGG19(
+        hyperparameters_object.get_input_size(),
         hyperparameters_object.get_psz(),
         hyperparameters_object.get_pst(),
         hyperparameters_object.get_fc_layers_num(),
@@ -314,10 +346,6 @@ def main_vgg():
         hyperparameters_object.get_fc_output_size()
         )
     print(vgg19)
-
-    #inspector_vgg19 = ModelInspector(vgg19)
-
-    print(f'vgg19 #params={inspector_vgg19.count_trainable_params()}')
     
     exit(0)
 

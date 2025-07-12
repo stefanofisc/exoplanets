@@ -1,5 +1,6 @@
 # Input parameters to define the network architecture of ResNet
-resnet_layers_num: 34   # Number of network layers. values: 18 or 34
-fc_layers_num: 1        # Number of fully-connected layers
-fc_units: 5120          #                           units #NOTE da determinare automaticamente in futuro
-fc_output_size: 3       # Number of output neurons
+# The number of fully connected units is 512 (when input_size = 201), 5120 (when input_size = 500)
+resnet_layers_num:  34      # Number of network layers. values: 18 or 34
+input_size:         500
+fc_layers_num:      1       # Number of fully-connected layers
+fc_output_size:     3       # Number of output neurons

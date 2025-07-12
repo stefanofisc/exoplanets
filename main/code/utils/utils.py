@@ -16,6 +16,9 @@ class GlobalPaths:
     DATA                = MAIN / 'data'                             # main/data/
     OUTPUT_FILES        = MAIN / 'output_files'                     # main/output_files/
     TRAINED_MODELS      = MAIN / 'trained_models'                   # main/trained_models/
+    # output_files/
+    TRAINING_METRICS    = OUTPUT_FILES / 'training_metrics'         # main/output_files/training_metrics/
+    TRAINING_METRICS_FEATURE_EXTRACTOR = TRAINING_METRICS / 'feature_extractor'
     # data/
     MAIN_DATASETS       = DATA / 'main_datasets'
     CSV                 = MAIN_DATASETS / 'csv_format'
@@ -36,6 +39,8 @@ class GlobalPaths:
     # config files
     config_dataset_csv_file         =   'config_dataset.yaml'
     config_feature_extractor_file   =   'config_feature_extractor.yaml'
+    config_vgg_file                 =   'config_vgg.yaml'
+    config_resnet_file              =   'config_resnet.yaml'
     config_data_preparation         =   'config_data_preparation.yaml'
     config_manifold_learning        =   'config_manifold_learning.yaml'
     #TODO Put config filenames here

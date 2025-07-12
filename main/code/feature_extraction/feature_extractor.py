@@ -21,11 +21,10 @@ from  utils                   import get_today_string, GlobalPaths, get_device, 
 sys.path.insert(1, str(GlobalPaths.DATASET))
 from  dataset                 import Dataset
 
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = get_device()
 print(f"Executing training on {device}")
 
-
+"""
 class ModelInspector:
   def __init__(self, model):
     self.__model = model
@@ -38,7 +37,7 @@ class ModelInspector:
     print("="*50)
     for name, param in self.__model.named_parameters():
       print(f"{name:<30} {param.numel():<20}")
-
+"""
 
 @dataclass
 class InputVariablesModelTraining:
@@ -278,7 +277,9 @@ class Model:
             # As batch_x shape is torch.Size([batch_size, 201]), we need to convert to (batch_size, in_channels=1, signal_length=201)
             # in order Resnet is able to feed-forwardly process it. For this reason, we apply the unsqueeze() method to every batch
             # before computation.  
-            batch_x = batch_x.unsqueeze(1) 
+            #NOTE DEBUG EXPERIMENTAL 
+            if 'resnet' in self.__training_hyperparameters._model_name:
+              batch_x = batch_x.unsqueeze(1) 
             
             batch_x, batch_y = batch_x.to(device), batch_y.to(device) # put it on the same device where the model is
             
@@ -330,7 +331,7 @@ class Model:
         print("\nTraining completed.")        
         # Plot training metrics once training is completed. Use methods from the class TrainingMetrics
         self.__training_metrics.plot_metrics(
-          output_path=GlobalPaths.OUTPUT_FILES / 'training_metrics' / 'feature_extractor',
+          output_path=GlobalPaths.TRAINING_METRICS_FEATURE_EXTRACTOR,
           model_name=self.__training_hyperparameters._model_name,
           optimizer=self.__training_hyperparameters._optimizer,
           num_epochs=self.__training_hyperparameters._num_epochs,
@@ -406,10 +407,13 @@ class FeatureExtractor:
       
       if config_fe['model_name'] == 'vgg':
           # load data from config_vgg.yaml
-          self.__model_hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_vgg.yaml')
+          self.__model_hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(
+             GlobalPaths.CONFIG / GlobalPaths.config_vgg_file
+             )
           
           # Create the model architecture
           self.__model = VGG19(
+              self.__model_hyperparameters_object.get_input_size(),
               self.__model_hyperparameters_object.get_psz(),
               self.__model_hyperparameters_object.get_pst(),
               self.__model_hyperparameters_object.get_fc_layers_num(),
@@ -419,13 +423,15 @@ class FeatureExtractor:
           print(self.__model)
       else:
           # load data from config_resnet.yaml
-          self.__model_hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_resnet.yaml')
+          self.__model_hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(
+             GlobalPaths.CONFIG / GlobalPaths.config_resnet_file
+             )
 
           # Create the model
           self.__model = ResNet(
             ResidualBlock, 
             self.__model_hyperparameters_object.get_resnet_layers_num(),
-            self.__model_hyperparameters_object.get_fc_units(),
+            self.__model_hyperparameters_object.get_input_size(),
             self.__model_hyperparameters_object.get_fc_output_size()
             ).to(device)
           print(self.__model)
