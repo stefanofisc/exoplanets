@@ -1,5 +1,5 @@
 mode:         'train'         # mode = {train, test}
-model_name:   'resnet'        # Choose the network architecture to be used as feature extractor. Values: {vgg, resnet} 
+model_name:   'vgg'        # Choose the network architecture to be used as feature extractor. Values: {vgg, resnet} 
 optimizer:    'sgd'          # Choose the optimization algorithm. Values: {adam, sgd}
 num_classes:  3               # Number of output classes. 
 weight_decay: 0.0001          # Decomment when using Stochastic Gradient Descent
@@ -9,4 +9,4 @@ batch_size:   128
 num_epochs:   50
 save_model:   True            # variabile booleana per salvataggio modello. default value: False
 purpose:      'from_scratch'     # Opzionale. Considera solo se save_model = True. values: {from_scratch, finetuned}
-#saved_model_name: '2025-07-03_resnet_adam_50_kepler_dr25_from_scratch_model.pt'
+#saved_model_name: '2025-07-12_resnet_sgd_50_plato_flux_original_from_scratch_model.pt'

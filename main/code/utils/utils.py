@@ -36,6 +36,7 @@ class GlobalPaths:
     # plot/
     PLOT_DEBUG              =   OUTPUT_FILES / 'plot_debug'
     PLOT_MANIFOLD_LEARNING  =   OUTPUT_FILES / 'plot_manifold_learning'
+    PLOT_TSNE               =   OUTPUT_FILES / 'plot_tsne'
     # config files
     config_dataset_csv_file         =   'config_dataset.yaml'
     config_feature_extractor_file   =   'config_feature_extractor.yaml'

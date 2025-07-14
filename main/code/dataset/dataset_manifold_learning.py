@@ -8,18 +8,22 @@ class DatasetManifoldLearning(TensorDataHandler):
 
         self.__dataset_conf = manifold_learning_dataset_hyperparameters_object
         
-        #NOTE. Questa chiamata va riconsiderata in accordo con le note definite in class ManifoldLearning.project_data()
-        self.__load_training_data()
-        
+        self.__load_training_data()        
         super()._print_tensor_shapes()
     
     def __load_training_data(self):
         """
-            Carica i numpy.ndarray (x_train, y_train).
+            Carica i numpy.ndarray (x_train, y_train), che possono consistere in:
+                - Features prodotte dal modulo feature_extractor (dati in features_step1_cnn/)
+                - Segnali di input grezzi                        (dati in main_datasets/numpy_format_split_80_20/)
+            
+            Il modulo di Manifold Learning caricherà sempre e solo i dati di training, 
+            in quanto i suoi output rappresenteranno le etichette (y_train) del MLP. 
+            Sarà il MLP, invece, a processare i dati di test. 
         """    
         super().set_x_y_train(
-            np.load(GlobalPaths.DATA_NUMPY / self.__dataset_conf.filename_samples),
-            np.load(GlobalPaths.DATA_NUMPY / self.__dataset_conf.filename_labels).astype(int)
+            np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_samples),
+            np.load(GlobalPaths.FEATURES_STEP1_CNN / self.__dataset_conf.filename_labels).astype(int)
         )
 
 

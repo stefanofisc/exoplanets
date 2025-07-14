@@ -1,7 +1,12 @@
+# Load data from features_step1_cnn/
 dataset:
-  filename_samples: 'plato_FittedEvents_phaseflux_original_multiclass_train_split_features.npy' # <light curve, id, label>
-  filename_labels:  'plato_FittedEvents_phaseflux_original_multiclass_train_split_labels.npy'    # Optional    
+  filename_samples: '2025-07-12_resnet_sgd_50_plato_flux_original_train_features.npy' # <light curve, id, label>
+  filename_labels:  '2025-07-12_resnet_sgd_50_plato_flux_original_train_labels.npy'     
 
 embedding:
   algorithm:    'isomap'  # isomap, lle, mdscal, ...
   n_components: 2
+
+output:
+  save_features:  True 
+  save_plot:      True
