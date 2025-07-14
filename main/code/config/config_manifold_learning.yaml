@@ -5,7 +5,7 @@ dataset:
 
 embedding:
   algorithm:    'isomap'  # isomap, lle, mdscal, ...
-  n_components: 2
+  n_components: 3
 
 output:
   save_features:  True 

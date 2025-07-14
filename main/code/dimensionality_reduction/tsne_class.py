@@ -106,14 +106,12 @@ class myTSNE:
         plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
         plt.close()
 
-
     def main(self):
         self.__project_features()
         self.__save_projected_feature_vectors()
         if self.__tsne_hyperparameters_object._plot_features:
             self.__plot_tsne_representation()
         log.info('myTSNE class. Ending...')
-
 
     def __del__(self):
         log.info('\nDestructor called for the class myTSNE')

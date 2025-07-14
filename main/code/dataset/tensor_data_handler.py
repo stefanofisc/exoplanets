@@ -15,8 +15,8 @@ class TensorDataHandler:
     def __init__(self):
       self._X_train = None                     # Training set: PyTorch tensor / numpy.ndarray (classifier.py)
       self._y_train = None
-      self._X_test = None                      # Test set: PyTorch tensor / numpy.ndarray (classifier.py)
-      self._y_test = None
+      self._X_test  = None                      # Test set: PyTorch tensor / numpy.ndarray (classifier.py)
+      self._y_test  = None
       log.info('Constructor of TensorDataHandler')
 
     def _print_tensor_shapes(self):
@@ -24,13 +24,13 @@ class TensorDataHandler:
         Print the dimensions of the training and testing tensors.
       """
       if self._X_train is not None and self._y_train is not None:
-          print('\nShowing train tensors shape:')
-          print(f"X_train: {self._X_train.shape}, y_train: {self._y_train.shape}")
+          log.info('\nShowing train tensors shape:')
+          log.info(f"X_train: {self._X_train.shape}, y_train: {self._y_train.shape}")
       if self._X_test is not None:
         if self._y_test is not None:
-          print(f"X_test:  {self._X_test.shape}, y_test:  {self._y_test.shape}")
+          log.info(f"X_test:  {self._X_test.shape}, y_test:  {self._y_test.shape}")
         else:
-          print(f"X_test:  {self._X_test.shape}")
+          log.info(f"X_test:  {self._X_test.shape}")
 
     def get_training_test_samples(self):
       return self._X_train, self._y_train, self._X_test, self._y_test
@@ -49,12 +49,12 @@ class TensorDataHandler:
 
         # Shuffle coerente su X, y e dispositions
         
-        indices = torch.randperm(len(self._X_train))
-        x_shuffled = self._X_train[indices]
-        y_shuffled = self._y_train[indices]
+        indices               = torch.randperm(len(self._X_train))
+        x_shuffled            = self._X_train[indices]
+        y_shuffled            = self._y_train[indices]
         dispositions_shuffled = torch.tensor(dispositions, dtype=torch.long)[indices]
         
-        train_dataset = TensorDataset(x_shuffled, y_shuffled, dispositions_shuffled)
+        train_dataset         = TensorDataset(x_shuffled, y_shuffled, dispositions_shuffled)
         
         #train_dataset = TensorDataset(self._X_train, self._y_train, torch.tensor(dispositions, dtype=torch.long))
         return DataLoader(train_dataset, batch_size = batch_size, shuffle = False)
@@ -98,4 +98,4 @@ class TensorDataHandler:
       self._y_test = y_test
 
     def __del__(self):
-      log.info('\nDestructor called for the class TensorDataset')
+      log.info('Destructor called for the class TensorDataset')

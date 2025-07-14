@@ -20,14 +20,15 @@ class GlobalPaths:
     TRAINING_METRICS    = OUTPUT_FILES / 'training_metrics'         # main/output_files/training_metrics/
     TRAINING_METRICS_FEATURE_EXTRACTOR = TRAINING_METRICS / 'feature_extractor'
     # data/
-    MAIN_DATASETS       = DATA / 'main_datasets'
-    CSV                 = MAIN_DATASETS / 'csv_format'
-    DATA_NUMPY          = MAIN_DATASETS / 'numpy_format_split_80_20'
-    FEATURES_STEP1_CNN  = DATA / 'features_step1_cnn'
-    FEATURES_STEP2_TSNE = DATA / 'features_step2_tsne'
-    FEATURES_STEP2_MLP  = DATA / 'features_step2_mlp'
-    PLATO_DATA_TABLES   = DATA / 'plato_data' / 'table_format'
-    PLATO_DATA_NUMPY    = DATA / 'plato_data' / 'numpy_format'
+    MAIN_DATASETS           = DATA / 'main_datasets'
+    CSV                     = MAIN_DATASETS / 'csv_format'
+    DATA_NUMPY              = MAIN_DATASETS / 'numpy_format_split_80_20'
+    FEATURES_STEP1_CNN      = DATA / 'features_step1_cnn'
+    FEATURES_STEP2_TSNE     = DATA / 'features_step2_tsne'
+    FEATURES_STEP2_MLP      = DATA / 'features_step2_mlp'
+    FEATURES_STEP2_MANIFOLD = DATA / 'features_step2_manifold'
+    PLATO_DATA_TABLES       = DATA / 'plato_data' / 'table_format'
+    PLATO_DATA_NUMPY        = DATA / 'plato_data' / 'numpy_format'
     # code/
     DATASET             = CODE / 'dataset'                          # main/code/dataset
     FEATURE_EXTRACTION  = CODE / 'feature_extraction'               # main/code/feature_extraction

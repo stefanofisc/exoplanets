@@ -1,6 +1,7 @@
 import  yaml
 import  sys
 import  pandas              as      pd
+import  numpy               as      np
 import  matplotlib.pyplot   as      plt
 import  plotly.express      as      px
 from    sklearn.manifold    import  Isomap
@@ -61,7 +62,6 @@ class ManifoldLearning:
         self.__extracted_features   = []    # output of the feature extraction module 
         self.__extracted_labels     = []    # initialized when plot_features = True
         self.__projected_features   = []    # output of the dim. red. module
-        self.__output_filename_base = ''    # base filename structure, without format extension. Used for projected_features and fig_filename        
         #NOTE END EXPERIMENTAL
 
         self.__embedding            = self.__init_embedding()
@@ -89,6 +89,20 @@ class ManifoldLearning:
     
     def __get_training_samples(self):
         self.__extracted_features, self.__extracted_labels, *_ = self.__dataset.get_training_test_samples()
+
+    def __define_output_filename(self):
+        filename_samples = self.__manifold_learning_hyperparameters_object._dataset.filename_samples
+        n_components     = self.__manifold_learning_hyperparameters_object._embedding.n_components
+        algorithm        = self.__manifold_learning_hyperparameters_object._embedding.algorithm
+        prefix           = (filename_samples).split('.npy')[0]
+        suffix           = f'{n_components}d_{algorithm}'
+
+        output_filename_base = f'{prefix}_{suffix}'
+
+        return (
+            GlobalPaths.FEATURES_STEP2_MANIFOLD /
+            f'{output_filename_base}.npy'
+          )
 
     def project_data(self):
         #NOTE.  La logica del caricamento dei dati di training-test va riconsiderata. Qui stiamo caricando il dataset 
@@ -199,14 +213,30 @@ class ManifoldLearning:
         print(f"[✓] 3D interactive plot saved to: {filepath}")
 
     def save_projected_data(self):
-        log.debug('save_projected_data')
-        pass
+        """
+            Save the projected feature vectors in data/features_step2_manifold/.
+            A warning is raised and feature vectors are not saved when output filename already exists
+        """
+        filepath_base = self.__define_output_filename()
 
+        if filepath_base.exists():
+            log.warning(f'[!] File {filepath_base.name} already exists. Projected features not saved to avoid overwriting.')
+            return
+
+        np.save(filepath_base.with_name(filepath_base.name), self.__projected_features)
+        log.info(f'[✓] Projected features saved to {filepath_base}')      
+        
     def main(self):
         self.project_data()
         if self.__manifold_learning_hyperparameters_object._output.save_plot == True:
-            self.plot_projected_data()
-            #self.plot_projected_data_interactive_html()
+            n_components = self.__manifold_learning_hyperparameters_object._embedding.n_components
+            if n_components == 2:
+                self.plot_projected_data()
+            elif n_components == 3:
+                self.plot_projected_data_interactive_html()
+            else:
+                log.error(f'In class ManifoldLearning.main(). Cannot plot data in {n_components}d')
+        
         if self.__manifold_learning_hyperparameters_object._output.save_features == True:
             self.save_projected_data()
 
