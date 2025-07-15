@@ -7,6 +7,7 @@ import  plotly.express      as      px
 from    sklearn.manifold    import  Isomap
 from    dataclasses         import  dataclass
 from    pathlib             import  Path
+from    typing              import  Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from    utils               import  GlobalPaths, get_today_string
@@ -25,7 +26,17 @@ class DatasetConfig:
 class EmbeddingConfig:
     algorithm:          str
     n_components:       int
-    #variable: Optional[type] = value
+    #NOTE Maybe you'll change in future implementations as these are Isomap specific parameters
+    n_neighbors:        int
+    max_iter:           int
+    radius:             Optional[float] = None
+    eigen_solver:       Optional[str]   = 'auto'
+    tol:                Optional[int]   = 0
+    path_method:        Optional[str]   = 'auto'
+    neighbors_algorithm:Optional[str]   = 'auto'
+    metric:             Optional[str]   = 'minkowski'
+    p:                  Optional[int]   = 2
+    n_jobs:             Optional[int]   = 1
 
 @dataclass
 class OutputConfig:
@@ -58,11 +69,9 @@ class ManifoldLearning:
         # Initialize the hyperparameters object 
         self.__manifold_learning_hyperparameters_object = self.__init_manifold_learning_hyperparameters()
 
-        #NOTE EXPERIMENTAL Same configuration as in tsne_class
         self.__extracted_features   = []    # output of the feature extraction module 
         self.__extracted_labels     = []    # initialized when plot_features = True
         self.__projected_features   = []    # output of the dim. red. module
-        #NOTE END EXPERIMENTAL
 
         self.__embedding            = self.__init_embedding()
         self.__dataset              = self.__init_dataset()
@@ -73,11 +82,26 @@ class ManifoldLearning:
             )
 
     def __init_embedding(self):
-        algorithm       = self.__manifold_learning_hyperparameters_object._embedding.algorithm
-        n_components    = self.__manifold_learning_hyperparameters_object._embedding.n_components
-        
-        methods = {
-            "isomap": Isomap(n_components = n_components, n_jobs=-1)#,
+        """
+            Initialize the sklearn.manifold object.
+            Input parameters are defined in the config_manifold_learning.yaml file, within the 
+            embedding object.
+        """
+        algorithm   = self.__manifold_learning_hyperparameters_object._embedding.algorithm
+        methods     = {
+            "isomap": Isomap(
+                n_components    = self.__manifold_learning_hyperparameters_object._embedding.n_components,
+                n_neighbors     = self.__manifold_learning_hyperparameters_object._embedding.n_neighbors,
+                radius          = self.__manifold_learning_hyperparameters_object._embedding.radius,
+                eigen_solver    = self.__manifold_learning_hyperparameters_object._embedding.eigen_solver,
+                tol             = self.__manifold_learning_hyperparameters_object._embedding.tol,
+                max_iter        = self.__manifold_learning_hyperparameters_object._embedding.max_iter,
+                path_method     = self.__manifold_learning_hyperparameters_object._embedding.path_method,
+                neighbors_algorithm = self.__manifold_learning_hyperparameters_object._embedding.neighbors_algorithm,
+                metric          = self.__manifold_learning_hyperparameters_object._embedding.metric,
+                p               = self.__manifold_learning_hyperparameters_object._embedding.p,
+                n_jobs          = -1,
+                )#,
             #"lle": LocalLinearEmbedding() 
         }
         return methods.get(algorithm)
@@ -227,7 +251,14 @@ class ManifoldLearning:
         log.info(f'[✓] Projected features saved to {filepath_base}')      
         
     def main(self):
+        """
+            Main execution.
+                1. Project data in the manifold
+                2. Plot projected features
+                3. Save projected feature vectors in features_step2_manifold
+        """
         self.project_data()
+
         if self.__manifold_learning_hyperparameters_object._output.save_plot == True:
             n_components = self.__manifold_learning_hyperparameters_object._embedding.n_components
             if n_components == 2:

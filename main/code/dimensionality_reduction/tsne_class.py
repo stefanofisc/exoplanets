@@ -25,7 +25,7 @@ class InputVariablesTSNE:
             config = yaml.safe_load(file)
 
         return cls(
-            _ncomp                      =   config.get('ncomp', 2),                             
+            _ncomp                      =   config.get('n_comp', 2),                             
             _perplexity                 =   config.get('perplexity', 25),
             _max_iter                   =   config.get('max_iter', 2000),
             _extracted_features_filename=   config.get('extracted_features_filename', None),
@@ -71,8 +71,9 @@ class myTSNE:
         log.info("[✓] Projection completed.")
     
     def __save_projected_feature_vectors(self):
-        prefix = (self.__tsne_hyperparameters_object._extracted_features_filename).split('.npy')[0]
-        suffix = f'{self.__tsne_hyperparameters_object._ncomp}d_tsne'
+        prefix  = (self.__tsne_hyperparameters_object._extracted_features_filename).split('.npy')[0]
+        suffix  = f'{self.__tsne_hyperparameters_object._ncomp}d_tsne'
+        
         self.__output_filename_base = f'{prefix}_{suffix}'
 
         filepath_base = (
@@ -84,19 +85,47 @@ class myTSNE:
 
         print(f'[✓] Projected features saved to {filepath_base}')      
 
-    def __plot_tsne_representation(self):
-        fontsize = 20
-        resolution = 1200
+    def __plot_tsne_representation(self, alpha=0.7, cmap='viridis'):
+        fontsize    = 20
+        resolution  = 1200
+        n_components= self.__tsne_hyperparameters_object._ncomp
+
+        xlabel='t-SNE Dimension 1'
+        ylabel='t-SNE Dimension 2'
         # The input vector labels contains the true class labels and it is used to color the projected points
-        plt.figure(figsize=(10, 8))
+        fig = plt.figure(figsize=(10, 8))
+        if n_components == 2:
+            scatter = plt.scatter(
+                self.__projected_features[:, 0], 
+                self.__projected_features[:, 1], 
+                c=self.__extracted_labels, 
+                cmap=cmap, 
+                alpha=alpha
+                )
+            plt.colorbar(scatter, label='Class Labels')
+            plt.xlabel(xlabel, fontsize=fontsize)
+            plt.ylabel(ylabel, fontsize=fontsize)
+            plt.xticks(fontsize=fontsize)
+            plt.yticks(fontsize=fontsize)
 
-        scatter = plt.scatter(self.__projected_features[:, 0], self.__projected_features[:, 1], c=self.__extracted_labels, cmap='viridis', alpha=0.7)
-        plt.colorbar(scatter, label='Class Labels')
+        elif n_components == 3:
+            zlabel = 't-SNE Dimension 3'
+            ax = fig.add_subplot(111, projection='3d')
+            scatter = ax.scatter(
+                self.__projected_features[:, 0],
+                self.__projected_features[:, 1],
+                self.__projected_features[:, 2],
+                c=self.__extracted_labels,
+                cmap=cmap,
+                edgecolors='k',
+                alpha=alpha
+            )
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_zlabel(zlabel)
 
-        plt.xlabel('t-SNE Dimension 1', fontsize=fontsize)
-        plt.ylabel('t-SNE Dimension 2', fontsize=fontsize)
-        plt.xticks(fontsize=fontsize)
-        plt.yticks(fontsize=fontsize)
+        else:
+            raise ValueError(f"[!] Visualizzazione supportata solo per n_components = 2 o 3, ma è {n_components}")
 
         filepath_base = (
             GlobalPaths.PLOT_TSNE / 
@@ -111,7 +140,7 @@ class myTSNE:
         self.__save_projected_feature_vectors()
         if self.__tsne_hyperparameters_object._plot_features:
             self.__plot_tsne_representation()
-        log.info('myTSNE class. Ending...')
+        log.info('TSNE, ending...')
 
     def __del__(self):
         log.info('\nDestructor called for the class myTSNE')
