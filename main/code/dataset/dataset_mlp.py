@@ -42,8 +42,7 @@ class DatasetMLP(TensorDataHandler):
       self.__load_dispositions()
 
       super()._print_tensor_shapes()
-      
-    
+          
     def __load_training_data(self):
       """
         Load numpy.ndarrays (self.__x_train_numpy, y_train_numpy) from features_step1_cnn/ and features_step2_tsne/, respectively.
@@ -93,7 +92,6 @@ class DatasetMLP(TensorDataHandler):
         Convert the normalized data into a tensor and initialize (_X_test) the TensorDataHandler class
       """
       super().set_x_y_test( torch.tensor(self.__x_test_numpy_norm, dtype=torch.float32) )
-
 
     def get_training_data_loader(self):
       return super().get_training_data_loader(

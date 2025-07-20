@@ -1,21 +1,26 @@
+# Information on feature vectors:
+#   -- Resnet34(plato_flux_original)
+#         Each feature vector is a <class 'numpy.ndarray'>
+#         Length of feature vectors: 5120
+#         Each element of the feature vector is a <class 'numpy.float32'>
 mlp:
-  mode: "test"                     # values: {train, test}
-  input_dim: 512                   # NOTE. This value has to be automatically retrieved from input in future implementations
-  hidden_layers: [128, 32, 8]      
-  output_dim: 2      
-  activation: "ReLU"
-  saved_model_name: "2025-07-03_resnet_adam_50_kepler_dr25_from_scratch_mlp.pt"
+  mode:           "test"                 # values: {train, test}
+  input_dim:      5120                    # NOTE. TODO This value has to be automatically retrieved from input in future implementations
+  hidden_layers:  [128, 32, 8]      
+  output_dim:     2      
+  activation:     "ReLU"
+  saved_model_name: "2025-07-15_resnet_sgd_150_plato_flux_original_from_scratch_mlp_30.pt"
 
 training:
-  batch_size: 256
-  learning_rate: 0.001
-  epochs: 10
-  optimizer: "adam"
-  loss_function: "MeanSquaredError"
-  #weight_decay: 0.0001             # use when optimizer is SGD
-  #momentum: 0.99                   # use when optimizer is SGD
+  batch_size:     256
+  learning_rate:  0.001
+  #epochs:         30
+  optimizer:      "adam"
+  loss_function:  "MeanSquaredError"
+  #weight_decay:  0.0001                  # use when optimizer is SGD
+  #momentum:      0.99                    # use when optimizer is SGD
 
 dataset:
-  filename_samples: '2025-07-03_resnet_adam_50_kepler_dr25_test_features.npy'          # extracted features, by cnn, in in FEATURES_STEP1_CNN
-  #filename_labels: '2025-07-03_resnet_adam_50_kepler_dr25_train_features_2d_tsne.npy'   # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
-  filename_dispositions: '2025-07-03_resnet_adam_50_kepler_dr25_test_labels.npy'       # extracted labels in FEATURES_STEP1_CNN
+  filename_samples:       '2025-07-15_resnet_sgd_150_plato_flux_original_test_features.npy'          # extracted features, by cnn, in in FEATURES_STEP1_CNN
+  #filename_labels:        '2025-07-15_resnet_sgd_150_plato_flux_original_train_features_2d_tsne.npy'  # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
+  filename_dispositions:  '2025-07-15_resnet_sgd_150_plato_flux_original_test_labels.npy'            # extracted labels in FEATURES_STEP1_CNN

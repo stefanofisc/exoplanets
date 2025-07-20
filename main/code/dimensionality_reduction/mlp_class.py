@@ -4,6 +4,7 @@ import  torch.nn            as nn
 import  torch.optim         as optim
 import  yaml
 import  os
+import  re
 import  numpy               as np
 import  matplotlib.pyplot   as plt
 from    tqdm                import tqdm
@@ -13,30 +14,31 @@ from    typing              import List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from utils                  import GlobalPaths, get_device, TrainingMetrics
+from logger                 import log
 
 sys.path.insert(1, str(Path(__file__).resolve().parent.parent / 'dataset'))
-from dataset                import DatasetMLP
+from dataset_mlp            import DatasetMLP
 
 device = get_device()
 
 @dataclass
 class MLPConfig:
-    mode: str           
-    input_dim: int      
-    hidden_layers: Optional[List[int]] = None
-    output_dim: Optional[int] = 2
-    activation: Optional[str] = 'ReLU'
-    saved_model_name: Optional[str] = None
+    mode:           str           
+    input_dim:      int      
+    hidden_layers:  Optional[List[int]] = None
+    output_dim:     Optional[int]       = 2
+    activation:     Optional[str]       = 'ReLU'
+    saved_model_name: Optional[str]     = None
 
 @dataclass
 class TrainingConfig:
-    batch_size: Optional[int] = 128
-    learning_rate: Optional[float] = None
-    epochs: Optional[int] = None
-    optimizer: Optional[str] = None
-    loss_function: Optional[str] = 'MeanSquaredError'
-    weight_decay: Optional[float] = 0.0001
-    momentum: Optional[float] = 0.99
+    batch_size:     Optional[int]   = 128
+    learning_rate:  Optional[float] = None
+    epochs:         Optional[int]   = None
+    optimizer:      Optional[str]   = None
+    loss_function:  Optional[str]   = 'MeanSquaredError'
+    weight_decay:   Optional[float] = 0.0001
+    momentum:       Optional[float] = 0.99
 
 @dataclass
 class DatasetConfig:
@@ -236,10 +238,10 @@ class MLP(nn.Module):
             filename
         )
         if os.path.exists(filepath_base):
-            print(f'[WARNING] Filename: {filename}, already exists. \nThe model has not been saved to avoid overwriting.')
+            log.warning(f'[WARNING] Filename: {filename}, already exists. \nThe model has not been saved to avoid overwriting.')
         else:
             torch.save(self.__model.state_dict(), filepath_base)
-            print(f'[✓] Model saved in {filepath_base}')
+            log.info(f'[✓] Model saved in {filepath_base}')
 
     def __plot_mlp_representation(self, filename:str):
         fontsize = 20
@@ -268,8 +270,8 @@ class MLP(nn.Module):
 
     def __project_features_from_testset(self):
         # Load the model
-        saved_model_name = self.__mlp_hyperparameters_object._mlp.saved_model_name
-        model_path = GlobalPaths.TRAINED_MODELS / saved_model_name
+        saved_model_name    = self.__mlp_hyperparameters_object._mlp.saved_model_name
+        model_path          = GlobalPaths.TRAINED_MODELS / saved_model_name
 
         if not os.path.exists(model_path):
             raise ValueError(f'[ERROR] No occurrence found in "trained_models/" for {saved_model_name}.')
@@ -290,36 +292,62 @@ class MLP(nn.Module):
                 # Store the projected features into a <class 'list'>, where each element is <class 'numpy.ndarray'>
                 self.__projected_features.append(outputs.detach().cpu().numpy())
 
+    def __build_output_filenames(self):
+        mode   = self.__mlp_hyperparameters_object._mlp.mode
+        
+        # Build the prefix of the filename containing the projected features by MLP
+        prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split(f'_{mode}')[0]}"
+        
+        if self.__mlp_hyperparameters_object._training.epochs is not None:
+            epochs = self.__mlp_hyperparameters_object._training.epochs
+        else:
+            # Get the number of epochs from saved model name
+            result = re.search('mlp_(.*).pt', self.__mlp_hyperparameters_object._mlp.saved_model_name)
+            epochs = result.group(1)
+        
+        filename_features   = f'{prefix}_{mode}_features_2d_mlp_{epochs}'
+        filename_labels     = f'{prefix}_{mode}_labels_2d_mlp_{epochs}'
+
+        if mode == 'train':
+            filename_model  = f'{prefix}_from_scratch_mlp_{epochs}.pt'
+            filename_loss   = f'{prefix}_loss_{epochs}.png'
+            return filename_features, filename_labels, filename_model, filename_loss
+        else:
+            return filename_features, filename_labels
 
     def main(self):
 
         print(self.__model)
 
-        mode = self.__mlp_hyperparameters_object._mlp.mode
-
-        # Prefix of the filename containing the projected features by MLP
+        mode   = self.__mlp_hyperparameters_object._mlp.mode
+        """
+        # Build the prefix of the filename containing the projected features by MLP
         prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split(f'_{mode}')[0]}"
-        filename_features = f'{prefix}_{mode}_features_2d_mlp'
-        filename_labels = f'{prefix}_{mode}_labels_2d_mlp'
+        if self.__mlp_hyperparameters_object._training.epochs is not None:
+            epochs = self.__mlp_hyperparameters_object._training.epochs
+        else:
+            # Get the number of epochs from saved model name
+            result = re.search('mlp_(.*).pt', self.__mlp_hyperparameters_object._mlp.saved_model_name)
+            epochs = result.group(1)
+        
+        filename_features   = f'{prefix}_{mode}_features_2d_mlp_{epochs}'
+        filename_labels     = f'{prefix}_{mode}_labels_2d_mlp_{epochs}'
+        """
 
         if mode == 'train':
             self.__train()
-            
-            # Training completed. Define the filenames for saving plots, features and model
-            #NOTE. Remove these two lines if new prefix works. prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split('_train')[0]}"
-            # filename_features = f'{prefix}_train_features_2d_mlp'
-            filename_model = f'{prefix}_from_scratch_mlp.pt'
+
+            # Training completed, define output filenames
+            filename_features, filename_labels, filename_model, filename_loss = self.__build_output_filenames()
             
             self.__training_metrics.plot_loss(
-                output_path=str(GlobalPaths.OUTPUT_FILES / 'plot_mlp'),
-                filename = f'{prefix}_loss.png'
+                output_path = str(GlobalPaths.OUTPUT_FILES / 'plot_mlp'),
+                filename    = filename_loss
                 )                                                           # Plot loss after training
             
-            #NOTE. Remove
-            #NOTE.self.__plot_mlp_representation(filename_features)         # Plot MLP representation      
-            #NOTE.self.__save_projected_feature_vectors(filename_features)  # Concatenate and save feature vectors and labels
             self.__save_model(filename_model)                               # Save the model
         else:
+            filename_features, filename_labels = self.__build_output_filenames()
             self.__project_features_from_testset()
 
         # Code executed in both modes train and test
