@@ -38,6 +38,7 @@ class GlobalPaths:
     PLOT_DEBUG              =   OUTPUT_FILES / 'plot_debug'
     PLOT_MANIFOLD_LEARNING  =   OUTPUT_FILES / 'plot_manifold_learning'
     PLOT_TSNE               =   OUTPUT_FILES / 'plot_tsne'
+    PLOT_CUSTOM_PROJECTION  =   OUTPUT_FILES / 'plot_custom_projection'
     # config files
     config_dataset_csv_file         =   'config_dataset.yaml'
     config_feature_extractor_file   =   'config_feature_extractor.yaml'
@@ -45,6 +46,7 @@ class GlobalPaths:
     config_resnet_file              =   'config_resnet.yaml'
     config_data_preparation         =   'config_data_preparation.yaml'
     config_manifold_learning        =   'config_manifold_learning.yaml'
+    config_custom_projection        =   'config_custom_projection.yaml'
     #TODO Put config filenames here
     
     # dataset filenames

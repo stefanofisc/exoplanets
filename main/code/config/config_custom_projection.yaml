@@ -1,0 +1,3 @@
+features_filename: 'features_step2_tsne/2025-08-23_vgg_sgd_100_psz3_kepler_dr25_train_features_2d_tsne.npy' 
+#labels_filename: 'features_step1_cnn/2025-08-27_resnet18_adam_80_kepler_dr25_train_labels.npy'
+output_plot_resolution: 1200
