@@ -1,0 +1,30 @@
+VGG19(
+  12.85 M, 100.000% Params, 131.71 MMac, 99.843% MACs, 
+  (_VGG19__feature_extraction_vgg19): FeatureExtractionVGG19(
+    6.28 M, 48.912% Params, 125.14 MMac, 94.867% MACs, 
+    (_FeatureExtractionVGG19__conv_blocks): ModuleList(
+      (0): Conv1d(256, 0.002% Params, 51.46 KMac, 0.039% MACs, 1, 64, kernel_size=(3,), stride=(1,), padding=same)
+      (1): Conv1d(12.35 k, 0.096% Params, 2.48 MMac, 1.882% MACs, 64, 64, kernel_size=(3,), stride=(1,), padding=same)
+      (2): Conv1d(24.7 k, 0.192% Params, 2.47 MMac, 1.873% MACs, 64, 128, kernel_size=(3,), stride=(1,), padding=same)
+      (3): Conv1d(49.28 k, 0.384% Params, 4.93 MMac, 3.736% MACs, 128, 128, kernel_size=(3,), stride=(1,), padding=same)
+      (4): Conv1d(98.56 k, 0.767% Params, 4.83 MMac, 3.661% MACs, 128, 256, kernel_size=(3,), stride=(1,), padding=same)
+      (5): Conv1d(196.86 k, 1.532% Params, 9.65 MMac, 7.313% MACs, 256, 256, kernel_size=(3,), stride=(1,), padding=same)
+      (6): Conv1d(393.73 k, 3.064% Params, 9.45 MMac, 7.163% MACs, 256, 512, kernel_size=(3,), stride=(1,), padding=same)
+      (7-9): 3 x Conv1d(786.94 k, 6.125% Params, 18.89 MMac, 14.317% MACs, 512, 512, kernel_size=(3,), stride=(1,), padding=same)
+      (10-13): 4 x Conv1d(786.94 k, 6.125% Params, 8.66 MMac, 6.562% MACs, 512, 512, kernel_size=(3,), stride=(1,), padding=same)
+    )
+    (_FeatureExtractionVGG19__flatten): Flatten(0, 0.000% Params, 0.0 Mac, 0.000% MACs, start_dim=1, end_dim=-1)
+  )
+  (_VGG19__classification_vgg19): ClassificationVGG19(
+    6.56 M, 51.088% Params, 6.56 MMac, 4.976% MACs, 
+    (_ClassificationVGG19__fc_blocks): ModuleList(
+      (0): FullyConnectedVGG19(
+        6.56 M, 51.088% Params, 6.56 MMac, 4.976% MACs, 
+        (_FullyConnectedVGG19__fc_layer): Linear(6.56 M, 51.028% Params, 6.56 MMac, 4.970% MACs, in_features=2560, out_features=2560, bias=True)
+        (_FullyConnectedVGG19__output_layer): Linear(7.68 k, 0.060% Params, 7.68 KMac, 0.006% MACs, in_features=2560, out_features=3, bias=True)
+      )
+    )
+  )
+)
+Computational complexity:       131.91 MMac
+Number of parameters:           12.85 M 

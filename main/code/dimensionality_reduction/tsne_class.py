@@ -85,7 +85,7 @@ class myTSNE:
 
         print(f'[✓] Projected features saved to {filepath_base}')      
 
-    def __plot_tsne_representation(self, alpha=0.7, cmap='viridis'):
+    def __plot_tsne_representation(self, alpha=0.4, cmap='viridis'):
         fontsize    = 20
         resolution  = 1200
         n_components= self.__tsne_hyperparameters_object._ncomp

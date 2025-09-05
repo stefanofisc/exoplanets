@@ -1,5 +1,5 @@
-n_comp:       3         # Number of output dimensions. values={2,3}
+n_comp:       2         # Number of output dimensions. values={2,3}
 perplexity:   50        # Larger datasets usually require a larger perplexity. Consider selecting a value between 5 and 50
 max_iter:     3000
-extracted_features_filename: '2025-07-15_resnet_sgd_150_plato_flux_original_train_features.npy'
+extracted_features_filename: '2025-08-31_vgg_sgd_40_psz5_kepler_dr25_train_features.npy'
 plot_features: True

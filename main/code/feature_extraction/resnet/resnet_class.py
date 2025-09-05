@@ -149,8 +149,9 @@ class ResNet(nn.Module):
         x = self.layer3(x)
 
         x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        return x
+        x = x.view(x.size(0), -1)   # same of flatten = nn.Flatten(); x = flatten(x)
+
+        return x                    # shape: torch.Size([1, 512])
 
     def forward(self, x):
         #NOTE DEBUG EXPERIMENTAL

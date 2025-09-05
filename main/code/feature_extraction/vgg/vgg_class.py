@@ -97,11 +97,16 @@ class FeatureExtractionVGG19(nn.Module):
 
 
   def forward(self, x):
+    # Gestione robusta della shape
+      if x.dim() == 2:
+        x = x.unsqueeze(1)  # (batch, 1, length)
+      elif x.dim() != 3:
+        raise ValueError(f"Expected 2D or 3D input, got {x.shape}")
       i=0
       # input
       #NOTE DEBUG EXPERIMENTAL gv_length = 201 #TBF
       #NOTE DEBUG EXPERIMENTAL x = x.view(-1, 1, gv_length)
-      x = x.unsqueeze(1)
+      #NOTE DEBUG EXPERIMENTAL 2025-08-22. x = x.unsqueeze(1)
       #log.debug(f'Input tensor information:\n   type:{type(x)}; shape:{x.shape}')
       #if x.shape[-1] == self.__input_size:
       #   log.debug(f'{x.shape[-1]} == {self.__input_size}')
@@ -205,6 +210,8 @@ class FeatureExtractionVGG19(nn.Module):
 class FullyConnectedVGG19(nn.Module):
   def __init__(self, input_size, fc_units, output_size):
     super(FullyConnectedVGG19, self).__init__()
+    log.debug(f'input size: {input_size}, fc units: {fc_units}')
+    #EXPERIMENTALself.__fc_units     = fc_units if fc_units > 0 else input_size
     self.__fc_units     = input_size #NOTE DEBUG EXPERIMENTAL fc_units
     self.__fc_layer     = nn.Linear(input_size, self.__fc_units)
     self.__output_layer = nn.Linear(self.__fc_units, output_size)
@@ -346,6 +353,8 @@ def main_vgg():
         hyperparameters_object.get_fc_output_size()
         )
     print(vgg19)
+
+    vgg19.get_vgg19_complexity(vgg19)
     
     exit(0)
 
