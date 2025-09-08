@@ -103,7 +103,11 @@ class Model:
 
         if training_test_hyperparameters_object.get_mode() == 'train':
           # Load training set (PyTorch DataLoader object)
-          self.__training_data_loader     = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+          #NOTE EXPERIMENT
+          self.__training_data_loader      = self.__dataset.get_full_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+          #NOTE END EXPERIMENT
+          #NOTE DECOMMENTA riga sotto
+          #self.__training_data_loader     = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
           
           self.__training_hyperparameters = training_test_hyperparameters_object
           self.__training_metrics         = TrainingMetrics()

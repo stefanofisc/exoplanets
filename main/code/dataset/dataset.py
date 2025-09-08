@@ -353,6 +353,22 @@ class Dataset:
     def get_training_test_samples(self):
       return self.__X_train, self.__y_train, self.__X_test, self.__y_test
     
+    def get_full_data_loader(self, batch_size):
+      """
+        Metodo provvisorio che mi permette di caricare direttamente l'intero dataset D_K25 come training set.
+        Il metodo viene richiamato in feature_extractor.py, nel costruttore della classe Model
+        Data: 2025-09-08
+      """
+      data = torch.load(
+         GlobalPaths.MAIN_DATASETS / 
+         "tensor_format" / 
+         "kepler_q1-q17_dr25_multiclass_train_test_split.pt"
+      )
+      X, y = data
+      log.debug(f'X_full: {X.shape}; y_full: {y.shape}')
+      dataset = TensorDataset(X, y)
+      return DataLoader(dataset, batch_size = batch_size, shuffle = False)
+
     def get_training_data_loader(self, batch_size):
       """
         Creates a dataset by combining inputs and labels. This method is used by the Model class during training to iterate over the samples.
