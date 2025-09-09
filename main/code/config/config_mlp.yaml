@@ -4,23 +4,23 @@
 #         Length of feature vectors: 5120
 #         Each element of the feature vector is a <class 'numpy.float32'>
 mlp:
-  mode:           "test"                 # values: {train, test}
+  mode:           "train"                 # values: {train, test}
   input_dim:      512                    # NOTE. TODO This value has to be automatically retrieved from input in future implementations
   hidden_layers:  [128, 32, 8]      
   output_dim:     2      
   activation:     "ReLU"
-  saved_model_name: "2025-08-30_resnet18_adam_60_kepler_dr25_from_scratch_mlp_15.pt"
+  #saved_model_name: "2025-08-30_resnet18_adam_60_kepler_dr25_from_scratch_mlp_15.pt"
 
 training:
   batch_size:     128
   learning_rate:  0.001
-  epochs:         15
+  epochs:         30
   optimizer:      "adam"
   loss_function:  "MeanSquaredError"
   #weight_decay:  0.0001                  # use when optimizer is SGD
   #momentum:      0.99                    # use when optimizer is SGD
 
 dataset:
-  filename_samples:       '2025-08-30_resnet18_adam_60_kepler_dr25_test_features.npy'          # extracted features, by cnn, in in FEATURES_STEP1_CNN
-  #filename_labels:        '2025-08-30_resnet18_adam_60_kepler_dr25_train_features_2d_tsne.npy'  # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
-  filename_dispositions:  '2025-08-30_resnet18_adam_60_kepler_dr25_test_labels.npy'            # extracted labels in FEATURES_STEP1_CNN
+  filename_samples:       '2025-08-27_resnet18_adam_80_kepler_dr25_train_features.npy'          # extracted features, by cnn, in in FEATURES_STEP1_CNN
+  filename_labels:        '2025-08-27_resnet18_adam_80_kepler_dr25_train_features_2d_tsne.npy'  # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
+  filename_dispositions:  '2025-08-27_resnet18_adam_80_kepler_dr25_train_labels.npy'            # extracted labels in FEATURES_STEP1_CNN

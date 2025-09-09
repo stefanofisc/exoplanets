@@ -244,14 +244,17 @@ class MLP(nn.Module):
             log.info(f'[✓] Model saved in {filepath_base}')
 
     def __plot_mlp_representation(self, filename:str):
-        fontsize = 20
-        resolution = 1200
-        labels = self.__dataset.get_dispositions()
-        projection = np.vstack(self.__projected_features)    # To avoid the error: TypeError: list indices must be integers or slices, not tuple
+        fontsize    = 20
+        resolution  = 1200
+        labels      = self.__dataset.get_dispositions()
+        projection  = np.vstack(self.__projected_features)    # To avoid the error: TypeError: list indices must be integers or slices, not tuple
         
+        #log.debug(f'#labels:{len(labels)}')                 # Numbers are correct. Checked on 2025-09-09
+        #log.debug(f'#features:{len(projection)}')
+
         plt.figure(figsize=(10, 8))
 
-        scatter = plt.scatter(projection[:, 0], projection[:, 1], c=labels, cmap='viridis', alpha=0.7)
+        scatter = plt.scatter(projection[:, 0], projection[:, 1], c=labels, cmap='viridis', alpha=0.2)
         plt.colorbar(scatter, label='Class Labels')
 
         plt.xlabel('MLP Dimension 1', fontsize=fontsize)
@@ -259,14 +262,65 @@ class MLP(nn.Module):
         plt.xticks(fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         
-        #NOTE. plot_mlp, plot_tsne, plot_cnn_training_metrics, posso inserirli tutti in utils.py
         filepath_base = (
-            GlobalPaths.OUTPUT_FILES / 'plot_mlp' / 
+            GlobalPaths.OUTPUT_FILES / GlobalPaths.PLOT_MLP / 
             f'{filename}.png'
           )
 
         plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
         plt.close()
+
+    def __plot_mlp_representation_single_class(self, filename, target_class):
+        """
+            Plotta la proiezione MLP solo per gli elementi appartenenti a una classe specifica.
+
+            Parameters
+            ----------
+            filename : str
+                Nome base del file di output (senza estensione).
+            target_class : int
+                Classe da plottare (0, 1 o 2).
+        """
+        fontsize    = 20
+        resolution  = 1200
+
+        # Recupera etichette e features proiettate
+        labels      = self.__dataset.get_dispositions()
+        projection  = np.vstack(self.__projected_features)  # shape (N, 2)
+
+        # Filtra solo la classe desiderata
+        mask = labels == target_class
+        filtered_projection = projection[mask]
+        filtered_labels = labels[mask]
+
+        if filtered_projection.size == 0:
+            raise ValueError(f"[!] Nessun campione trovato per la classe {target_class}")
+
+        plt.figure(figsize=(10, 8))
+
+        scatter = plt.scatter(
+            filtered_projection[:, 0],
+            filtered_projection[:, 1],
+            c=filtered_labels,
+            cmap="viridis",
+            alpha=0.6,
+            edgecolors="k"
+        )
+
+        plt.colorbar(scatter, label=f"Class {target_class}")
+        plt.xlabel("MLP Dimension 1", fontsize=fontsize)
+        plt.ylabel("MLP Dimension 2", fontsize=fontsize)
+        plt.xticks(fontsize=fontsize)
+        plt.yticks(fontsize=fontsize)
+
+        filepath_base = (
+            GlobalPaths.OUTPUT_FILES / GlobalPaths.PLOT_MLP / f"{filename}_class{target_class}.png"
+        )
+
+        plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
+        plt.close()
+        log.debug(f"[✓] Plot salvato: {filepath_base}")
+
 
     def __project_features_from_testset(self):
         # Load the model
@@ -341,7 +395,7 @@ class MLP(nn.Module):
             filename_features, filename_labels, filename_model, filename_loss = self.__build_output_filenames()
             
             self.__training_metrics.plot_loss(
-                output_path = str(GlobalPaths.OUTPUT_FILES / 'plot_mlp'),
+                output_path = str(GlobalPaths.OUTPUT_FILES / GlobalPaths.PLOT_MLP),
                 filename    = filename_loss
                 )                                                           # Plot loss after training
             
@@ -352,6 +406,9 @@ class MLP(nn.Module):
 
         # Code executed in both modes train and test
         self.__plot_mlp_representation(filename_features)                   # Plot MLP representation      
+        #NOTE DEBUG PLOT CLASSI SEPARATE
+        # for i in range(3):
+        #    self.__plot_mlp_representation_single_class(filename_features, i)
         self.__save_projected_feature_vectors(filename_features, filename_labels)   # Concatenate and save feature vectors and labels
 
 

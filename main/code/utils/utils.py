@@ -38,6 +38,7 @@ class GlobalPaths:
     PLOT_DEBUG              =   OUTPUT_FILES / 'plot_debug'
     PLOT_MANIFOLD_LEARNING  =   OUTPUT_FILES / 'plot_manifold_learning'
     PLOT_TSNE               =   OUTPUT_FILES / 'plot_tsne'
+    PLOT_MLP                =   OUTPUT_FILES / 'plot_mlp'
     PLOT_CUSTOM_PROJECTION  =   OUTPUT_FILES / 'plot_custom_projection'
     # config files
     config_dataset_csv_file         =   'config_dataset.yaml'
