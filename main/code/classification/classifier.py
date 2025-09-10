@@ -1,49 +1,54 @@
 import sys
 import yaml
 import os
-import numpy as np
-import matplotlib.pyplot as plt
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Optional
-from sklearn.svm import SVC
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
-from sklearn.inspection import DecisionBoundaryDisplay
-from sklearn.utils.class_weight import compute_class_weight
-from joblib import dump, load
+import numpy                        as     np
+import matplotlib.pyplot            as     plt
+from dataclasses                    import dataclass
+from pathlib                        import Path
+from typing                         import Optional
+from sklearn.svm                    import SVC
+from sklearn.discriminant_analysis  import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+from sklearn.inspection             import DecisionBoundaryDisplay
+from sklearn.utils.class_weight     import compute_class_weight
+from joblib                         import dump, load
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
-from utils import GlobalPaths, TrainingMetrics #get_device
+from utils                          import GlobalPaths, TrainingMetrics #get_device
 
 sys.path.insert(1, str(Path(__file__).resolve().parent.parent / 'dataset'))
-from dataset import DatasetClassifier
+from dataset_classifier             import DatasetClassifier
 
 #device = get_device()
 
 @dataclass
 class ClassifierConfig:
-    mode: str
-    model: str
-    saved_model_name: Optional[str] = None
+    mode:                    str
+    model:                   str
+    saved_model_name:        Optional[str] = None
     # SVM specific parameters
-    kernel: Optional[str] = None
-    C: Optional[float] = 1.0
-    gamma: Optional[str] = None
+    kernel:                  Optional[str] = None
+    C:                       Optional[float] = 1.0
+    gamma:                   Optional[str] = None
     decision_function_shape: Optional[str] = None
     # LDA, QDA specific parameters
-    solver: Optional[str] = None
-    shrinkage: Optional[str] = None # NOTE. As this parameter could assume None, 'auto' or a float value in [0,1], please convert it in float when necessary
-    n_components: Optional[int] = 2
+    solver:                  Optional[str] = None
+    shrinkage:               Optional[str] = None # NOTE. As this parameter could assume None, 'auto' or a float value in [0,1], please convert it in float when necessary
+    n_components:            Optional[int] = 2
     
 @dataclass
 class DatasetConfig:
-    filename_samples: str
-    filename_labels: str
+    filename_samples:   str
+    filename_labels:    str
+
+@dataclass
+class StorageConfig:
+    save_model: Optional[bool] = False
 
 @dataclass
 class InputVariablesClassifier:
     _classifier: ClassifierConfig
-    _dataset: DatasetConfig
+    _dataset:    DatasetConfig
+    _storage:    StorageConfig
 
     @classmethod
     def get_input_hyperparameters(cls, filename: str):
@@ -51,11 +56,13 @@ class InputVariablesClassifier:
             config = yaml.safe_load(f)
 
         classifier_conf = ClassifierConfig(**config['classifier'])
-        dataset_conf = DatasetConfig(**config['dataset'])
+        dataset_conf    = DatasetConfig(**config['dataset'])
+        storage_conf    = StorageConfig(**config['storage'])
 
         return cls(
-            _classifier=classifier_conf,
-            _dataset=dataset_conf
+            _classifier = classifier_conf,
+            _dataset    = dataset_conf,
+            _storage    = storage_conf
         )
 
 class Classifier:
@@ -159,7 +166,7 @@ class Classifier:
         """Model assessment"""
         _, _, x_test, y_test = self.__dataset.get_training_test_samples()
 
-        y_pred = self.__model.predict(x_test)
+        y_pred  = self.__model.predict(x_test)
         y_proba = self.__model.predict_proba(x_test) if hasattr(self.__model, "predict_proba") else None
 
         self.__training_metrics.compute_and_log_classification_metrics(
@@ -214,16 +221,16 @@ class Classifier:
         return filename
 
     def __define_output_plot_filename(self):
-        model = self.__classifier_hyperparameters_object._classifier.model
-        prefix = str(self.__classifier_hyperparameters_object._dataset.filename_samples).split('_test')[0]
+        model   = self.__classifier_hyperparameters_object._classifier.model
+        prefix  = str(self.__classifier_hyperparameters_object._dataset.filename_samples).split('_test')[0]
 
         if model == 'svm':
-            kernel = self.__classifier_hyperparameters_object._classifier.kernel
-            filename = f'{prefix}_{model}_{kernel}.png'
+            kernel      = self.__classifier_hyperparameters_object._classifier.kernel
+            filename    = f'{prefix}_{model}_{kernel}.png'
         
         elif model == 'lda' or model == 'qda':
-            solver = self.__classifier_hyperparameters_object._classifier.solver
-            filename = f'{prefix}_{model}_{solver}.png'
+            solver      = self.__classifier_hyperparameters_object._classifier.solver
+            filename    = f'{prefix}_{model}_{solver}.png'
         
         else:
             raise ValueError(f'In defining output plot filename. Got {model}, when expected svm, lda or qda')
@@ -236,11 +243,15 @@ class Classifier:
     def main(self):
         if self.__classifier_hyperparameters_object._classifier.mode == 'train':
             self.__train()
-            self.__save_model(self.__define_model_filename())
+            if self.__classifier_hyperparameters_object._storage.save_model == True:
+                self.__save_model(self.__define_model_filename())
         
         elif self.__classifier_hyperparameters_object._classifier.mode == 'test':
             self.__model = self.__load_model(self.__classifier_hyperparameters_object._classifier.saved_model_name)
             self.__evaluate()
+        
+        else:
+            raise ValueError('Invalid mode. Expected values are: train or test.')
 
 if __name__ == '__main__':
     classifier = Classifier()

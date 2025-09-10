@@ -1,7 +1,7 @@
 classifier:
   mode:   'test'      # 'train', 'test'
   model:  'svm'       # 'svm', 'lda', 'qda'
-  saved_model_name:   '2025-07-03_resnet_adam_50_kepler_dr25_svm_rbf.joblib' # name of the trained model to load in order to assess its predictive performance
+  saved_model_name:   '2025-08-27_resnet18_adam_80_kepler_dr25_svm_rbf.joblib' # name of the trained model to load in order to assess its predictive performance
   
   # SVM specific parameter
   kernel: 'rbf'       # 'linear', 'rbf'  #NOTE. Mandatory in test mode too
@@ -15,5 +15,8 @@ classifier:
   #n_components:  2   # Number of components for dimensionality reduction
 
 dataset:
-  filename_samples: '2025-07-03_resnet_adam_50_kepler_dr25_test_features_2d_mlp.npy'     # projected features by mlp, in FEATURES_STEP2_MLP
-  filename_labels:  '2025-07-03_resnet_adam_50_kepler_dr25_test_labels_2d_mlp.npy'        # related dispositions, in FEATURES_STEP2_MLP
+  filename_samples: '2025-08-27_resnet18_adam_80_kepler_dr25_test_features_2d_mlp_30.npy'     # projected features by mlp, in FEATURES_STEP2_MLP
+  filename_labels:  '2025-08-27_resnet18_adam_80_kepler_dr25_test_labels_2d_mlp_30.npy'        # related dispositions, in FEATURES_STEP2_MLP
+
+storage:
+  save_model: False

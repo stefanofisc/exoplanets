@@ -145,6 +145,55 @@ class myTSNE:
     def __del__(self):
         log.info('\nDestructor called for the class myTSNE')
 
+"""
+2025-09-10. 
+    Questi tre metodi ti fanno plottare le proiezioni del t-SNE normalizzate, facendoti proprio
+    vedere l'input su cui è addestrato il MLP. In future implementazioni, integra questo codice in questo
+    modulo.
+def __tmp_load_data(filename_features, filename_labels):
+    x_train_numpy   = np.load(filename_features)
+    labels          = np.load(filename_labels)
+    return x_train_numpy, labels
+
+def __tmp_normalize_data(x_train_numpy):
+        #Normalize data to zero mean and unit variance
+    epsilon = 1e-8  # offset to improve numerical stability. This prevents division by zero for features with zero std
+    
+    x_train_numpy_norm = (x_train_numpy - x_train_numpy.mean()) / (x_train_numpy.std() + epsilon )
+    return x_train_numpy_norm
+
+def __tmp_plot_normalized_data(x_train_numpy_norm, labels):
+    fontsize    = 24
+    resolution  = 1200
+
+    xlabel='t-SNE Dimension 1'
+    ylabel='t-SNE Dimension 2'
+    # The input vector labels contains the true class labels and it is used to color the projected points
+    plt.figure(figsize=(10, 8))
+    plt.scatter(
+        x_train_numpy_norm[:, 0], 
+        x_train_numpy_norm[:, 1], 
+        c=labels, 
+        cmap='viridis', 
+        alpha=0.6
+        )
+
+    plt.xlabel(xlabel, fontsize=fontsize)
+    plt.ylabel(ylabel, fontsize=fontsize)
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
+    plt.xlim(-2.5, 2.5)
+    plt.ylim(-2.5, 2.5)
+
+    output_filename= '2025-08-27_resnet18_adam_80_kepler_dr25_train_features_2d_tsne_normalized_data'
+    filepath_base = (
+        GlobalPaths.PLOT_TSNE / 
+        f'{output_filename}.png'
+        )
+    plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
+    plt.close()
+"""
+
 if __name__ == '__main__':
     tsne = myTSNE()
     tsne.main()

@@ -343,7 +343,7 @@ class MLP(nn.Module):
         class_color = color_map.get(target_class, "#000000")  # default nero se non trovato
         class_label = class_map.get(target_class, "UNK")
 
-        scatter = plt.scatter(
+        plt.scatter(
             filtered_projection[:, 0],
             filtered_projection[:, 1],
             c=class_color,

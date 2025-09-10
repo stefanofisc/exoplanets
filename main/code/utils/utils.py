@@ -4,9 +4,9 @@ import  matplotlib.pyplot   as      plt
 from    datetime            import  datetime
 from    pathlib             import  Path
 from    dataclasses         import  dataclass, field
-from    typing              import  List
-from    sklearn.metrics     import  precision_score, recall_score, f1_score, roc_auc_score
-
+from    typing              import  List, Dict  # NEW
+from    sklearn.metrics     import  precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, accuracy_score # NEW
+import  pandas              as      pd   # NEW
 
 class GlobalPaths:
     # exoplanets/
@@ -60,12 +60,39 @@ class GlobalPaths:
 
 @dataclass
 class TrainingMetrics:
+    """
+    2025-09-10. Novità introdotte
+
+        Confusion matrix → TP, TN, FP, FN per classe
+
+        Precision, Recall, F1 per classe salvati separatamente
+
+        Misclassification rate
+
+        Metodo print_last_per_class_metrics() → mostra una tabella con tutte le metriche per classe (usando pandas).
+    """
     epochs:     List[int]   = field(default_factory=list)
     loss:       List[float] = field(default_factory=list)
     precision:  List[float] = field(default_factory=list)
     recall:     List[float] = field(default_factory=list)
     f1:         List[float] = field(default_factory=list)
     auc_roc:    List[float] = field(default_factory=list)
+
+    # NEW >>> metrics per class
+    per_class_precision: Dict[int, List[float]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
+    per_class_recall:    Dict[int, List[float]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
+    per_class_f1:        Dict[int, List[float]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
+    
+    # NEW >>> confusion matrix breakdown
+    tp: Dict[int, List[int]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
+    tn: Dict[int, List[int]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
+    fp: Dict[int, List[int]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
+    fn: Dict[int, List[int]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
+
+    # NEW >>> misclassification rate: global and per class
+    misclassification_rate:             List[float] = field(default_factory=list)
+    per_class_misclassification_rate:   Dict[int, List[float]] = field(default_factory=lambda: {0: [], 1: [], 2: []})  # NEW
+
 
     def log(self, epoch, loss, precision, recall, f1, auc):
         """
@@ -92,7 +119,32 @@ class TrainingMetrics:
             Stampa i valori dell’ultima epoca
             Task: classificazione
         """
-        print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
+        # OLD print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
+        # NEW
+        print(
+            f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, "
+            f"Precision (macro): {self.precision[-1]:.3f}, "
+            f"Recall (macro): {self.recall[-1]:.3f}, "
+            f"F1 (macro): {self.f1[-1]:.3f}, "
+            f"AUC: {self.auc_roc[-1]:.3f}, "
+            f"Misclass. rate: {self.misclassification_rate[-1]:.3f}"
+        )
+
+    # NEW >>> stampa tabellare con metriche per classe
+    def print_last_per_class_metrics(self):
+        epoch = self.epochs[-1]
+        data = {
+            "Precision": [self.per_class_precision[c][-1] for c in [0, 1, 2]],
+            "Recall":    [self.per_class_recall[c][-1]    for c in [0, 1, 2]],
+            "F1":        [self.per_class_f1[c][-1]        for c in [0, 1, 2]],
+            "TP":        [self.tp[c][-1]                  for c in [0, 1, 2]],
+            "TN":        [self.tn[c][-1]                  for c in [0, 1, 2]],
+            "FP":        [self.fp[c][-1]                  for c in [0, 1, 2]],
+            "FN":        [self.fn[c][-1]                  for c in [0, 1, 2]],
+            "Misclass. Rate": [self.per_class_misclassification_rate[c][-1] for c in [0, 1, 2]],
+        }
+        df = pd.DataFrame(data, index=["Class 0", "Class 1", "Class 2"])
+        print(f"\n[Epoch {epoch}] Metrics per class:\n{df}\n")
 
     def print_last_regression(self):
         """
@@ -164,9 +216,40 @@ class TrainingMetrics:
                 auc = roc_auc_score(y_true, y_proba, multi_class='ovr')
             except:
                 auc = 0.0
+        
+        # NEW >>> confusion matrix
+        cm = confusion_matrix(y_true, y_pred, labels=[0, 1, 2])
+        total = cm.sum()  # NEW: total amount of samples you need to compute misclassification error
+        # NEW
+        for cls in [0, 1, 2]:
+            tp = cm[cls, cls]
+            fn = cm[cls, :].sum() - tp
+            fp = cm[:, cls].sum() - tp
+            tn = cm.sum() - (tp + fp + fn)
+        # NEW
+            self.tp[cls].append(tp)
+            self.fn[cls].append(fn)
+            self.fp[cls].append(fp)
+            self.tn[cls].append(tn)
+            # NEW: misclassification rate per classe
+            mr_cls = (fp + fn) / total
+            self.per_class_misclassification_rate[cls].append(mr_cls)
+        # NEW >>> per-class metrics
+        per_class_prec = precision_score(y_true, y_pred, labels=[0, 1, 2], average=None, zero_division=0)
+        per_class_rec  = recall_score(y_true, y_pred, labels=[0, 1, 2], average=None, zero_division=0)
+        per_class_f1   = f1_score(y_true, y_pred, labels=[0, 1, 2], average=None, zero_division=0)
+        # NEW
+        for cls, (p, r, f) in enumerate(zip(per_class_prec, per_class_rec, per_class_f1)):
+            self.per_class_precision[cls].append(p)
+            self.per_class_recall[cls].append(r)
+            self.per_class_f1[cls].append(f)
+        # NEW >>> global misclassification rate
+        misclass_rate = 1 - accuracy_score(y_true, y_pred)
+        self.misclassification_rate.append(misclass_rate)
 
         self.log(epoch=epoch, loss=loss, precision=precision, recall=recall, f1=f1, auc=auc)
         self.print_last_classification()
+        self.print_last_per_class_metrics()   # NEW >>> stampa tabella
 
 def get_today_string():
     """
