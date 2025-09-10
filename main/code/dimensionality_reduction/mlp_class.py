@@ -42,29 +42,39 @@ class TrainingConfig:
 
 @dataclass
 class DatasetConfig:
-    filename_samples: str
-    filename_dispositions: Optional[str] = None
-    filename_labels: Optional[str] = None
+    filename_samples:       str
+    filename_dispositions:  Optional[str] = None
+    filename_labels:        Optional[str] = None
+
+@dataclass
+class StorageConfig:
+    save_model:             Optional[bool] = False
+    save_feature_vectors:   Optional[bool] = False
+    plot_single:            Optional[bool] = False
+    plot_per_class:         Optional[bool] = False
 
 @dataclass
 class InputVariablesMLP:
-    _mlp: MLPConfig
-    _training: TrainingConfig
-    _dataset: DatasetConfig
+    _mlp:       MLPConfig
+    _training:  TrainingConfig
+    _dataset:   DatasetConfig
+    _storage:   StorageConfig
 
     @classmethod
     def get_input_hyperparameters(cls, filename: str):
         with open(filename, 'r') as f:
             config = yaml.safe_load(f)
 
-        mlp_conf = MLPConfig(**config['mlp'])
-        training_conf = TrainingConfig(**config.get('training', {}))
-        dataset_conf = DatasetConfig(**config.get('dataset', {}))
+        mlp_conf        = MLPConfig(**config['mlp'])
+        training_conf   = TrainingConfig(**config.get('training', {}))
+        dataset_conf    = DatasetConfig(**config.get('dataset',   {}))
+        storage_conf    = StorageConfig(**config.get('storage',   {}))
 
         return cls(
-            _mlp=mlp_conf,
-            _training=training_conf,
-            _dataset=dataset_conf
+            _mlp        = mlp_conf,
+            _training   = training_conf,
+            _dataset    = dataset_conf,
+            _storage    = storage_conf
         )
 
 # Define the MLP model
@@ -243,34 +253,54 @@ class MLP(nn.Module):
             torch.save(self.__model.state_dict(), filepath_base)
             log.info(f'[✓] Model saved in {filepath_base}')
 
-    def __plot_mlp_representation(self, filename:str):
-        fontsize    = 20
+    def __plot_mlp_representation(self, filename:str, alpha=0.4):
+        fontsize    = 24
         resolution  = 1200
         labels      = self.__dataset.get_dispositions()
         projection  = np.vstack(self.__projected_features)    # To avoid the error: TypeError: list indices must be integers or slices, not tuple
         
-        #log.debug(f'#labels:{len(labels)}')                 # Numbers are correct. Checked on 2025-09-09
-        #log.debug(f'#features:{len(projection)}')
-
         plt.figure(figsize=(10, 8))
 
-        scatter = plt.scatter(projection[:, 0], projection[:, 1], c=labels, cmap='viridis', alpha=0.2)
-        plt.colorbar(scatter, label='Class Labels')
+        color_map = {
+            0: "#3d014b",   # viola
+            1: "#21918c",   # verde acqua
+            2: "#fde724"    # giallo
+        }
+        class_map = {
+            0: "EB",
+            1: "PC",
+            2: "J"
+        }
+
+        # Plotta una classe alla volta per controllare colore e legenda
+        for cls, color in color_map.items():
+            mask = labels == cls
+            plt.scatter(
+                projection[mask, 0],
+                projection[mask, 1],
+                c=color,
+                alpha=alpha,
+                label=class_map[cls],
+            )
 
         plt.xlabel('MLP Dimension 1', fontsize=fontsize)
         plt.ylabel('MLP Dimension 2', fontsize=fontsize)
         plt.xticks(fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
-        
+        plt.ylim(-2.5, 2.5)
+        plt.xlim(-2.5, 2.5)
+
+        # Aggiungi legenda
+        plt.legend(title="Classes", fontsize=fontsize-4, title_fontsize=fontsize-2)
+
         filepath_base = (
             GlobalPaths.OUTPUT_FILES / GlobalPaths.PLOT_MLP / 
             f'{filename}.png'
           )
-
         plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
         plt.close()
 
-    def __plot_mlp_representation_single_class(self, filename, target_class):
+    def __plot_mlp_representation_single_class(self, filename, target_class, alpha=0.6):
         """
             Plotta la proiezione MLP solo per gli elementi appartenenti a una classe specifica.
 
@@ -281,7 +311,7 @@ class MLP(nn.Module):
             target_class : int
                 Classe da plottare (0, 1 o 2).
         """
-        fontsize    = 20
+        fontsize    = 24
         resolution  = 1200
 
         # Recupera etichette e features proiettate
@@ -298,20 +328,37 @@ class MLP(nn.Module):
 
         plt.figure(figsize=(10, 8))
 
+        color_map = {
+            0: "#3d014b",   # viola
+            1: "#21918c",   # verde acqua
+            2: "#fde724"    # giallo
+        }
+        class_map = {
+            0: "EB",
+            1: "PC",
+            2: "J"
+        }
+
+        # Colore corrispondente alla classe scelta
+        class_color = color_map.get(target_class, "#000000")  # default nero se non trovato
+        class_label = class_map.get(target_class, "UNK")
+
         scatter = plt.scatter(
             filtered_projection[:, 0],
             filtered_projection[:, 1],
-            c=filtered_labels,
-            cmap="viridis",
-            alpha=0.6,
-            edgecolors="k"
+            c=class_color,
+            alpha=alpha,
+            label=f"{class_label}"
         )
 
-        plt.colorbar(scatter, label=f"Class {target_class}")
+        #plt.colorbar(scatter, label=f"Class {target_class}")
         plt.xlabel("MLP Dimension 1", fontsize=fontsize)
         plt.ylabel("MLP Dimension 2", fontsize=fontsize)
+        plt.ylim(-2.5, 2.5)
+        plt.xlim(-2.5, 2.5)
         plt.xticks(fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
+        plt.legend(fontsize=fontsize-4)
 
         filepath_base = (
             GlobalPaths.OUTPUT_FILES / GlobalPaths.PLOT_MLP / f"{filename}_class{target_class}.png"
@@ -319,8 +366,7 @@ class MLP(nn.Module):
 
         plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
         plt.close()
-        log.debug(f"[✓] Plot salvato: {filepath_base}")
-
+        log.debug(f"[✓] Plot saved to: {filepath_base}")
 
     def __project_features_from_testset(self):
         # Load the model
@@ -397,19 +443,24 @@ class MLP(nn.Module):
             self.__training_metrics.plot_loss(
                 output_path = str(GlobalPaths.OUTPUT_FILES / GlobalPaths.PLOT_MLP),
                 filename    = filename_loss
-                )                                                           # Plot loss after training
+                )                                                               # Plot loss after training
             
-            self.__save_model(filename_model)                               # Save the model
+            if self.__mlp_hyperparameters_object._storage.save_model == True:
+                self.__save_model(filename_model)                               # Save the model
         else:
             filename_features, filename_labels = self.__build_output_filenames()
             self.__project_features_from_testset()
 
-        # Code executed in both modes train and test
-        self.__plot_mlp_representation(filename_features)                   # Plot MLP representation      
-        #NOTE DEBUG PLOT CLASSI SEPARATE
-        # for i in range(3):
-        #    self.__plot_mlp_representation_single_class(filename_features, i)
-        self.__save_projected_feature_vectors(filename_features, filename_labels)   # Concatenate and save feature vectors and labels
+        # This code is executed in both modes train and test
+        if self.__mlp_hyperparameters_object._storage.plot_single == True:
+            self.__plot_mlp_representation(filename_features)                   # Plot MLP representation      
+        
+        if self.__mlp_hyperparameters_object._storage.plot_per_class == True:
+            for i in range(3):
+                self.__plot_mlp_representation_single_class(filename_features, i)
+        
+        if self.__mlp_hyperparameters_object._storage.save_feature_vectors == True:
+            self.__save_projected_feature_vectors(filename_features, filename_labels)   # Concatenate and save feature vectors and labels
 
 
 if __name__ == "__main__":
