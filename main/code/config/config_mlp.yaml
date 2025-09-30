@@ -5,28 +5,28 @@
 #         Each element of the feature vector is a <class 'numpy.float32'>
 mlp:
   mode:           "test"                 # values: {train, test}
-  input_dim:      512                    # NOTE. TODO This value has to be automatically retrieved from input in future implementations
-  hidden_layers:  [128, 32, 8]      
-  output_dim:     2      
+  input_dim:      512                     # NOTE. TODO This value has to be automatically retrieved from input in future implementations
+  hidden_layers:  [512]                   # previous configuration: [128, 32, 8]      
+  output_dim:     3      
   activation:     "ReLU"
-  saved_model_name: "2025-08-27_resnet18_adam_80_kepler_dr25_from_scratch_mlp_30.pt" # Use in test mode
+  saved_model_name: "2025-09-29_resnet18_adam_40_kepler_dr25_balanced_3d_mlp_10.pt" # Use in test mode
 
 training:
   batch_size:     128
   learning_rate:  0.001
-  epochs:         30
+  epochs:         10
   optimizer:      "adam"
   loss_function:  "MeanSquaredError"
   #weight_decay:  0.0001                  # use when optimizer is SGD
   #momentum:      0.99                    # use when optimizer is SGD
 
 dataset:
-  filename_samples:       '2025-08-27_resnet18_adam_80_kepler_dr25_test_features.npy'          # extracted features, by cnn, in in FEATURES_STEP1_CNN
-  #filename_labels:        '2025-08-27_resnet18_adam_80_kepler_dr25_train_features_2d_tsne.npy'  # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
-  filename_dispositions:  '2025-08-27_resnet18_adam_80_kepler_dr25_test_labels.npy'            # extracted labels in FEATURES_STEP1_CNN
+  filename_samples:       '2025-09-29_resnet18_adam_40_kepler_dr25_balanced_test_features.npy'          # extracted features, by cnn, in in FEATURES_STEP1_CNN
+  #filename_labels:        '2025-09-29_resnet18_adam_40_kepler_dr25_balanced_train_features_3d_tsne.npy'  # projected features, by tsne, Opzionale: perché i labels 2D li hai solo per training set
+  filename_dispositions:  '2025-09-29_resnet18_adam_40_kepler_dr25_balanced_test_labels.npy'            # extracted labels in FEATURES_STEP1_CNN
 
 storage:
   save_model:           False   # Save the trained model
-  save_feature_vectors: False   # Save the two-dimensional feature vectors produced by the MLP
-  plot_single:          True   # Generate a single plot showing the 2D elements of the three classes
+  save_feature_vectors: True   # Save the two-dimensional feature vectors produced by the MLP
+  plot_single:          True    # Generate a single plot showing the 2D elements of the three classes
   plot_per_class:       True    # Generate a plot for each class

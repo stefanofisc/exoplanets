@@ -253,7 +253,7 @@ class MLP(nn.Module):
             torch.save(self.__model.state_dict(), filepath_base)
             log.info(f'[✓] Model saved in {filepath_base}')
 
-    def __plot_mlp_representation(self, filename:str, alpha=0.4):
+    def __plot_mlp_representation_2d(self, filename:str, alpha=0.4):
         fontsize    = 24
         resolution  = 1200
         labels      = self.__dataset.get_dispositions()
@@ -300,7 +300,7 @@ class MLP(nn.Module):
         plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
         plt.close()
 
-    def __plot_mlp_representation_single_class(self, filename, target_class, alpha=0.6):
+    def __plot_mlp_representation_single_class_2d(self, filename, target_class, alpha=0.6):
         """
             Plotta la proiezione MLP solo per gli elementi appartenenti a una classe specifica.
 
@@ -368,6 +368,137 @@ class MLP(nn.Module):
         plt.close()
         log.debug(f"[✓] Plot saved to: {filepath_base}")
 
+    ### NOTE NEW EXPERIMENTAL PLOT 3D
+
+    def __plot_mlp_representation_3d(self, filename: str, alpha=0.4):
+        fontsize    = 24
+        resolution  = 1200
+        labels      = self.__dataset.get_dispositions()
+        projection  = np.vstack(self.__projected_features)    # shape (N, 3)
+
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection="3d")
+
+        color_map = {
+            0: "#3d014b",   # viola
+            1: "#21918c",   # verde acqua
+            2: "#fde724"    # giallo
+        }
+        class_map = {
+            0: "EB",
+            1: "PC",
+            2: "J"
+        }
+
+        # Plotta una classe alla volta
+        for cls, color in color_map.items():
+            mask = labels == cls
+            ax.scatter(
+                projection[mask, 0],
+                projection[mask, 1],
+                projection[mask, 2],
+                c=color,
+                alpha=alpha,
+                label=class_map[cls],
+                edgecolors="k"
+            )
+
+        # Etichette assi
+        ax.set_xlabel('MLP Dimension 1', fontsize=fontsize)
+        ax.set_ylabel('MLP Dimension 2', fontsize=fontsize)
+        ax.set_zlabel('MLP Dimension 3', fontsize=fontsize)
+        ax.tick_params(axis='both', which='major', labelsize=fontsize-4)
+
+        # Limiti assi
+        ax.set_xlim(-2.5, 2.5)
+        ax.set_ylim(-2.5, 2.5)
+        ax.set_zlim(-2.5, 2.5)
+
+        # Aggiungi legenda
+        ax.legend(title="Classes", fontsize=fontsize-4, title_fontsize=fontsize-2)
+
+        filepath_base = (
+            GlobalPaths.OUTPUT_FILES / GlobalPaths.PLOT_MLP /
+            f'{filename}_3d.png'
+        )
+        plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
+        plt.close()
+
+    def __plot_mlp_representation_single_class_3d(self, filename: str, target_class: int, alpha=0.6):
+        """
+            Plotta la proiezione MLP solo per una classe specifica in 3D.
+
+            Parameters
+            ----------
+            filename : str
+                Nome base del file di output (senza estensione).
+            target_class : int
+                Classe da plottare (0, 1 o 2).
+        """
+        fontsize    = 24
+        resolution  = 1200
+
+        labels      = self.__dataset.get_dispositions()
+        projection  = np.vstack(self.__projected_features)  # shape (N, 3)
+
+        # Filtra solo la classe desiderata
+        mask = labels == target_class
+        filtered_projection = projection[mask]
+
+        if filtered_projection.size == 0:
+            raise ValueError(f"[!] Nessun campione trovato per la classe {target_class}")
+
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection="3d")
+
+        color_map = {
+            0: "#3d014b",   # viola
+            1: "#21918c",   # verde acqua
+            2: "#fde724"    # giallo
+        }
+        class_map = {
+            0: "EB",
+            1: "PC",
+            2: "J"
+        }
+
+        class_color = color_map.get(target_class, "#000000")
+        class_label = class_map.get(target_class, "UNK")
+
+        ax.scatter(
+            filtered_projection[:, 0],
+            filtered_projection[:, 1],
+            filtered_projection[:, 2],
+            c=class_color,
+            alpha=alpha,
+            label=f"{class_label}",
+            edgecolors="k"
+        )
+
+        # Etichette assi
+        ax.set_xlabel("MLP Dimension 1", fontsize=fontsize)
+        ax.set_ylabel("MLP Dimension 2", fontsize=fontsize)
+        ax.set_zlabel("MLP Dimension 3", fontsize=fontsize)
+        ax.tick_params(axis='both', which='major', labelsize=fontsize-4)
+
+        # Limiti assi
+        ax.set_xlim(-2.5, 2.5)
+        ax.set_ylim(-2.5, 2.5)
+        ax.set_zlim(-2.5, 2.5)
+
+        ax.legend(fontsize=fontsize-4)
+
+        filepath_base = (
+            GlobalPaths.OUTPUT_FILES / GlobalPaths.PLOT_MLP / f"{filename}_class{target_class}_3d.png"
+        )
+
+        plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
+        plt.close()
+        log.debug(f"[✓] 3D plot saved to: {filepath_base}")
+
+    ### NOTE END NEW
+
+
     def __project_features_from_testset(self):
         # Load the model
         saved_model_name    = self.__mlp_hyperparameters_object._mlp.saved_model_name
@@ -393,7 +524,9 @@ class MLP(nn.Module):
                 self.__projected_features.append(outputs.detach().cpu().numpy())
 
     def __build_output_filenames(self):
-        mode   = self.__mlp_hyperparameters_object._mlp.mode
+        # Get the training/test mode and output dimension
+        mode        = self.__mlp_hyperparameters_object._mlp.mode
+        output_dim  = self.__mlp_hyperparameters_object._mlp.output_dim
         
         # Build the prefix of the filename containing the projected features by MLP
         prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split(f'_{mode}')[0]}"
@@ -405,12 +538,12 @@ class MLP(nn.Module):
             result = re.search('mlp_(.*).pt', self.__mlp_hyperparameters_object._mlp.saved_model_name)
             epochs = result.group(1)
         
-        filename_features   = f'{prefix}_{mode}_features_2d_mlp_{epochs}'
-        filename_labels     = f'{prefix}_{mode}_labels_2d_mlp_{epochs}'
+        filename_features   = f'{prefix}_{mode}_features_{output_dim}d_mlp_{epochs}'
+        filename_labels     = f'{prefix}_{mode}_labels_{output_dim}d_mlp_{epochs}'
 
         if mode == 'train':
-            filename_model  = f'{prefix}_from_scratch_mlp_{epochs}.pt'
-            filename_loss   = f'{prefix}_loss_{epochs}.png'
+            filename_model  = f'{prefix}_{output_dim}d_mlp_{epochs}.pt'
+            filename_loss   = f'{prefix}_loss_{output_dim}d_{epochs}.png'
             return filename_features, filename_labels, filename_model, filename_loss
         else:
             return filename_features, filename_labels
@@ -419,20 +552,8 @@ class MLP(nn.Module):
 
         print(self.__model)
 
-        mode   = self.__mlp_hyperparameters_object._mlp.mode
-        """
-        # Build the prefix of the filename containing the projected features by MLP
-        prefix = f"{(self.__mlp_hyperparameters_object._dataset.filename_samples).split(f'_{mode}')[0]}"
-        if self.__mlp_hyperparameters_object._training.epochs is not None:
-            epochs = self.__mlp_hyperparameters_object._training.epochs
-        else:
-            # Get the number of epochs from saved model name
-            result = re.search('mlp_(.*).pt', self.__mlp_hyperparameters_object._mlp.saved_model_name)
-            epochs = result.group(1)
-        
-        filename_features   = f'{prefix}_{mode}_features_2d_mlp_{epochs}'
-        filename_labels     = f'{prefix}_{mode}_labels_2d_mlp_{epochs}'
-        """
+        mode        = self.__mlp_hyperparameters_object._mlp.mode
+        output_dim  = self.__mlp_hyperparameters_object._mlp.output_dim
 
         if mode == 'train':
             self.__train()
@@ -453,11 +574,18 @@ class MLP(nn.Module):
 
         # This code is executed in both modes train and test
         if self.__mlp_hyperparameters_object._storage.plot_single == True:
-            self.__plot_mlp_representation(filename_features)                   # Plot MLP representation      
+            if output_dim == 2:
+                self.__plot_mlp_representation_2d(filename_features)                   # Plot MLP representation
+            else:
+                self.__plot_mlp_representation_3d(filename_features)    
         
         if self.__mlp_hyperparameters_object._storage.plot_per_class == True:
-            for i in range(3):
-                self.__plot_mlp_representation_single_class(filename_features, i)
+            if output_dim == 2:
+                for i in range(3):
+                    self.__plot_mlp_representation_single_class_2d(filename_features, i)
+            else:
+                for i in range(3):
+                    self.__plot_mlp_representation_single_class_3d(filename_features, i)
         
         if self.__mlp_hyperparameters_object._storage.save_feature_vectors == True:
             self.__save_projected_feature_vectors(filename_features, filename_labels)   # Concatenate and save feature vectors and labels

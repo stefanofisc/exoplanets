@@ -150,6 +150,7 @@ class myTSNE:
     Questi tre metodi ti fanno plottare le proiezioni del t-SNE normalizzate, facendoti proprio
     vedere l'input su cui è addestrato il MLP. In future implementazioni, integra questo codice in questo
     modulo.
+
 def __tmp_load_data(filename_features, filename_labels):
     x_train_numpy   = np.load(filename_features)
     labels          = np.load(filename_labels)
@@ -162,7 +163,7 @@ def __tmp_normalize_data(x_train_numpy):
     x_train_numpy_norm = (x_train_numpy - x_train_numpy.mean()) / (x_train_numpy.std() + epsilon )
     return x_train_numpy_norm
 
-def __tmp_plot_normalized_data(x_train_numpy_norm, labels):
+def __tmp_plot_normalized_data_2d(x_train_numpy_norm, labels):
     fontsize    = 24
     resolution  = 1200
 
@@ -192,8 +193,65 @@ def __tmp_plot_normalized_data(x_train_numpy_norm, labels):
         )
     plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
     plt.close()
+
+def __tmp_plot_normalized_data_3d(x_train_numpy_norm, labels):
+    fontsize    = 24
+    resolution  = 1200
+
+    xlabel = 't-SNE Dimension 1'
+    ylabel = 't-SNE Dimension 2'
+    zlabel = 't-SNE Dimension 3'
+
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection="3d")
+
+    scatter = ax.scatter(
+        x_train_numpy_norm[:, 0],
+        x_train_numpy_norm[:, 1],
+        x_train_numpy_norm[:, 2],
+        c=labels,
+        cmap='viridis',
+        alpha=0.6,
+        edgecolors="k"
+    )
+
+    ax.set_xlabel(xlabel, fontsize=fontsize)
+    ax.set_ylabel(ylabel, fontsize=fontsize)
+    ax.set_zlabel(zlabel, fontsize=fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=fontsize-4)
+
+    # Limiti assi
+    ax.set_xlim(-2.5, 2.5)
+    ax.set_ylim(-2.5, 2.5)
+    ax.set_zlim(-2.5, 2.5)
+
+    # Colormap
+    fig.colorbar(scatter, ax=ax, label="Class Labels")
+
+    output_filename = '2025-09-30_resnet18_adam_40_kepler_dr25_balanced_train_features_3d_tsne_normalized_data'
+    filepath_base = (
+        GlobalPaths.PLOT_TSNE /
+        f'{output_filename}.png'
+    )
+    plt.savefig(filepath_base.with_name(filepath_base.name), dpi=resolution)
+    plt.close()
 """
 
 if __name__ == '__main__':
+    local_path          = '/Users/stefanofisc/Desktop/exoplanets/main/data/'
+    features_path       = 'features_step2_tsne/'
+    labels_path         = 'features_step1_cnn/'
+    features_filename   = '2025-09-29_resnet18_adam_40_kepler_dr25_balanced_train_features_3d_tsne.npy'
+    labels_filename     = '2025-09-29_resnet18_adam_40_kepler_dr25_balanced_train_labels.npy'
+    
+    x_train, y_train    = __tmp_load_data(
+        f'{local_path}{features_path}{features_filename}', 
+        f'{local_path}{labels_path}{labels_filename}'
+        )
+    x_train_norm        = __tmp_normalize_data(x_train)
+    
+    __tmp_plot_normalized_data_3d(x_train_norm, y_train)
+    """
     tsne = myTSNE()
     tsne.main()
+    """
