@@ -119,8 +119,10 @@ class TrainingMetrics:
             Stampa i valori dell’ultima epoca
             Task: classificazione
         """
-        # OLD print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
+        print(f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, Precision: {self.precision[-1]:.3f}, Recall: {self.recall[-1]:.3f}, F1: {self.f1[-1]:.3f}, AUC: {self.auc_roc[-1]:.3f}")
         # NEW
+        # NOTE DEBUG COMMENTATO IN DATA 2025-09-26
+        """
         print(
             f"Epoch {self.epochs[-1]} — Loss: {self.loss[-1]:.4f}, "
             f"Precision (macro): {self.precision[-1]:.3f}, "
@@ -129,6 +131,8 @@ class TrainingMetrics:
             f"AUC: {self.auc_roc[-1]:.3f}, "
             f"Misclass. rate: {self.misclassification_rate[-1]:.3f}"
         )
+        """
+        # NOTE DEBUG END COMMENTATO IN DATA 2025-09-26
 
     # NEW >>> stampa tabellare con metriche per classe
     def print_last_per_class_metrics(self):

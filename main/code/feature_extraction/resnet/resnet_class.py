@@ -1,6 +1,7 @@
 # He, K. et al. (2016). Deep Residual Learning for Image Recognition.
 # Source code: https://www.digitalocean.com/community/tutorials/writing-resnet-from-scratch-in-pytorch
 # Code adapted to allow the network to process one-dimensional signals of shape (1,201,1)
+# In PyTorch, the network parameters are initialized by default with Kaiming Uniform (He et al. 2015)
 import  torch
 import  torch.nn    as nn
 import  yaml

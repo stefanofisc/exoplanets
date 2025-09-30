@@ -1,8 +1,14 @@
 # dataset_filename values: {kepler_q1-q17_dr24_multiclass.csv, kepler_q1-q17_dr25_multiclass.csv, tess_tey2023_multiclass_ycategorical.csv, plato_FittedEvents_phaseflux_original_multiclass.csv}
-dataset_filename: 'kepler_q1-q17_dr25_multiclass.csv'
+dataset_filename: 'kepler_q1-q17_dr25_balanced_multiclass.csv'
 
-# catalog_name values: 'kepler_dr24', 'kepler_dr25', 'tess_tey23', 'plato_flux_original', 'plato_flux_zeromedian'
-catalog_name:     'kepler_dr25'
+# catalog_name values: 
+# 'kepler_dr24' 
+# 'kepler_dr25'
+# 'kepler_dr25_balanced'
+# 'tess_tey23' 
+# 'plato_flux_original' 
+# 'plato_flux_zeromedian'
+catalog_name:     'kepler_dr25_balanced'
 
 # NOTE. Questa keyword viene processata nel costruttore di Dataset. Se è presente nel file di config, allora significa che l'oggetto Dataset è stato istanziato
 # al fine di processare un nuovo pandas DataFrame. Si verifica soltanto l'esistenza della keyword, quindi il suo valore non conta ai fini del codice. 
@@ -22,7 +28,7 @@ initialize_from_scratch: False
 test_size: 0.2
 
 # Opzionale. Scegli se splittare il dataframe in train-test, e se salvarli in csv, TensorDataset o numpy.ndarray
-#dataset_save_split_format: 'numpy' # csv, tensor, numpy
+dataset_save_split_format: 'tensor' # csv, tensor, numpy
 
 # Scegli se caricare direttamente i file di input in formato tensoriale
 load_tensors:   True

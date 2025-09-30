@@ -13,9 +13,9 @@ def main_dataset_class():
 
     # Test class counting
     dataset_handler.count_classes()
-    dataset_handler.count_classes(dataframe='training')
-    dataset_handler.count_classes(dataframe='test')
-
+    #dataset_handler.count_classes(dataframe='training')
+    #dataset_handler.count_classes(dataframe='test')
+    
     # Test tensor access
     x_train, y_train, x_test, y_test = dataset_handler.get_training_test_samples()
     log.debug('\n Testing the method for loading the training test samples')

@@ -268,6 +268,10 @@ class Dataset:
               PathConfigDataset.TENSORS / 'kepler_q1-q17_dr25_multiclass_train_split.pt',
               PathConfigDataset.TENSORS / 'kepler_q1-q17_dr25_multiclass_test_split.pt'
           ),
+          'kepler_dr25_balanced': (
+              PathConfigDataset.TENSORS / 'kepler_q1-q17_dr25_balanced_multiclass_train_split.pt',
+              PathConfigDataset.TENSORS / 'kepler_q1-q17_dr25_balanced_multiclass_test_split.pt'
+          ),
           'tess_tey23': (
               PathConfigDataset.TENSORS / 'tess_tey2023_multiclass_train_split.pt',
               PathConfigDataset.TENSORS / 'tess_tey2023_multiclass_test_split.pt'

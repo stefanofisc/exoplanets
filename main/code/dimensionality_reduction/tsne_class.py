@@ -156,7 +156,7 @@ def __tmp_load_data(filename_features, filename_labels):
     return x_train_numpy, labels
 
 def __tmp_normalize_data(x_train_numpy):
-        #Normalize data to zero mean and unit variance
+    #Normalize data to zero mean and unit variance
     epsilon = 1e-8  # offset to improve numerical stability. This prevents division by zero for features with zero std
     
     x_train_numpy_norm = (x_train_numpy - x_train_numpy.mean()) / (x_train_numpy.std() + epsilon )
