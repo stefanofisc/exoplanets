@@ -1,7 +1,6 @@
 import  sys
 import  yaml
 import  torch
-import  pandas                  as      pd
 import  numpy                   as      np
 from    torch.utils.data        import  TensorDataset, DataLoader
 from    sklearn.model_selection import  train_test_split
@@ -10,6 +9,7 @@ from    collections             import  Counter
 from    pathlib                 import  Path
 from    dataclasses             import  dataclass
 from    typing                  import  Optional
+from    sklearn.model_selection import  train_test_split # NEW
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from    utils                   import  GlobalPaths
@@ -298,43 +298,6 @@ class Dataset:
 
       log.info("\n[✓] Tensors loaded successfully.")
 
-    """
-    NOTE. Old. C-oriented
-    def __load_tensors(self, catalog_name):
-      ###
-      #  Loads train-test splits of a given catalog in PyTorch tensor format (.pt)
-      #  Input:
-      #    - catalog_name: 'kepler_dr24', 'kepler_dr25', 'tess_tey23'
-      ###
-      if catalog_name == 'kepler_dr24':
-        train_tensor_path = PathConfigDataset.TENSORS / 'kepler_q1-q17_dr24_multiclass_train_split.pt'
-        test_tensor_path  = PathConfigDataset.TENSORS / 'kepler_q1-q17_dr24_multiclass_test_split.pt'
-
-      elif catalog_name == 'kepler_dr25':
-        train_tensor_path = PathConfigDataset.TENSORS / 'kepler_q1-q17_dr25_multiclass_train_split.pt'
-        test_tensor_path  = PathConfigDataset.TENSORS / 'kepler_q1-q17_dr25_multiclass_test_split.pt'
-
-      elif catalog_name == 'tess_tey23':
-        train_tensor_path = PathConfigDataset.TENSORS / 'tess_tey2023_multiclass_train_split.pt'
-        test_tensor_path  = PathConfigDataset.TENSORS / 'tess_tey2023_multiclass_test_split.pt'
-      
-      elif catalog_name == 'plato_flux_original':
-        train_tensor_path = PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_original_multiclass_train_split.pt'
-        test_tensor_path  = PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_original_multiclass_test_split.pt'
-        
-      elif catalog_name == 'plato_flux_zeromedian':
-        train_tensor_path = PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_zeromedian_multiclass_train_split.pt'
-        test_tensor_path  = PathConfigDataset.TENSORS / 'plato_FittedEvents_phaseflux_zeromedian_multiclass_test_split.pt'
-      
-      else:
-        raise ValueError(f'Error: Class Dataset, in load_tensors().\ncatalog_name must be in [kepler_dr24, kepler_dr25, tess_tey23], got {catalog_name} instead!')
-
-      self.__X_train, self.__y_train  = torch.load(train_tensor_path)
-      self.__X_test, self.__y_test    = torch.load(test_tensor_path)
-
-      log.info("\nTensors loaded successfully")
-    """
-
     def __save_split_as_numpy(self, shuffle_train=True):
         """
           Save train-test split as numpy.ndarray (.npy).
@@ -382,6 +345,43 @@ class Dataset:
       train_dataset = TensorDataset(self.__X_train, self.__y_train)
       return DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
     
+    def get_training_validation_data_loader(self, validation_ratio: float, batch_size: int):
+      """
+        Create and return training and validation sets DataLoader, divided from the entire training set.
+      """
+      if self.__X_train is None:
+         raise ValueError("[!] Training tensors have not been loaded yet. Call __load_tensors() or initialize them from scratch.")
+      
+      # 1. Convert to NumPy before splitting (requested by scikit-learn)
+      X_train_full_np = self.__X_train.cpu().numpy()
+      Y_train_full_np = self.__y_train.cpu().numpy()
+
+      # 2. Stratified split
+      X_train_np, X_val_np, Y_train_np, Y_val_np = train_test_split(
+        X_train_full_np, 
+        Y_train_full_np, 
+        test_size=validation_ratio, 
+        random_state=42, 
+        stratify=Y_train_full_np
+        )
+      
+      # 3. Conversion to PyTorch tensors (float for features, long for labels)
+      X_train_tensor = torch.tensor(X_train_np, dtype=torch.float32)
+      Y_train_tensor = torch.tensor(Y_train_np, dtype=torch.long)
+      X_val_tensor   = torch.tensor(X_val_np, dtype=torch.float32)
+      Y_val_tensor   = torch.tensor(Y_val_np, dtype=torch.long)
+
+      # 4. Creating TensorDataset and DataLoader
+      train_dataset = TensorDataset(X_train_tensor, Y_train_tensor)
+      val_dataset   = TensorDataset(X_val_tensor, Y_val_tensor)
+    
+      train_loader  = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+      val_loader    = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
+      log.debug(f"Dataset divided into: Training ({len(train_dataset)} samples), Validation ({len(val_dataset)} samples).")
+    
+      return train_loader, val_loader
+
     def get_test_data_loader(self, batch_size):
       # Analoso di get_training_data_loader, con test set.
       test_dataset = TensorDataset(self.__X_test, self.__y_test)

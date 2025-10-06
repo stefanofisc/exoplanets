@@ -9,7 +9,7 @@ import os
 from  pandas                  import read_csv
 from  resnet.resnet_class     import ResidualBlock, ResNet, InputVariablesResnet
 from  vgg.vgg_class           import VGG19, InputVariablesVGG19
-from  dataclasses             import dataclass#, field
+from  dataclasses             import dataclass
 from  sklearn.metrics         import precision_score, recall_score, f1_score, roc_auc_score
 from  tqdm                    import tqdm
 from  pathlib                 import Path
@@ -24,25 +24,12 @@ from  dataset                 import Dataset
 device = get_device()
 print(f"Executing training on {device}")
 
-"""
-class ModelInspector:
-  def __init__(self, model):
-    self.__model = model
-
-  def count_trainable_params(self):
-    return sum(p.numel() for p in self.__model.parameters() if p.requires_grad)
-
-  def print_layer_params(self):
-    print(f"{'Layer':<30} {'Param Count':<20}")
-    print("="*50)
-    for name, param in self.__model.named_parameters():
-      print(f"{name:<30} {param.numel():<20}")
-"""
 
 @dataclass
 class InputVariablesModelTraining:
     # define type of input data
     _mode:              str
+    _validation_set:    bool
     _model_name:        str
     _optimizer:         str
     _learning_rate:     float
@@ -53,6 +40,7 @@ class InputVariablesModelTraining:
     _momentum:          float
     _save_model:        bool
     _purpose:           str
+    _validation_split:  Optional[float] = None
     _saved_model_name:  Optional[str] = ''
 
     @classmethod
@@ -62,13 +50,15 @@ class InputVariablesModelTraining:
 
         return cls(
             _mode             = config['mode'],                             # the only mandatory input variable: values={train,test}
+            _validation_set   = config.get('validation_set', False),
+            _validation_split = config.get('validation_split', None),
             _model_name       = config.get('model_name', None),
             _optimizer        = config.get('optimizer', None),
             _learning_rate    = config.get('learning_rate', None),
             _num_epochs       = config.get('num_epochs', None),
             _batch_size       = config.get('batch_size', 64),
             _num_classes      = config.get('num_classes', None),
-            _weight_decay     = config.get('weight_decay', None),   # necessario solo se optimizer = SGD
+            _weight_decay     = config.get('weight_decay', None),       # necessario solo se optimizer = SGD
             _momentum         = config.get('momentum', None),           # necessario solo se optimizer = SGD
             _save_model       = config.get('save_model', False),
             _purpose          = config.get('purpose', 'TBD'),
@@ -79,7 +69,20 @@ class InputVariablesModelTraining:
     def get_mode(self):
       return self._mode
     
-    pass
+    def use_validation_set(self):
+       return self._validation_set
+    
+    def get_validation_split(self):
+       return self._validation_split
+
+    def get_batch_size(self):
+       return self._batch_size
+    
+    def get_num_classes(self):
+       return self._num_classes
+
+    def get_num_epochs(self):
+       return self._num_epochs
 
 class Model:
     def __init__(self, dataset, model, model_hyperparameters_object, training_test_hyperparameters_object):
@@ -104,10 +107,16 @@ class Model:
         if training_test_hyperparameters_object.get_mode() == 'train':
           # Load training set (PyTorch DataLoader object)
           #NOTE EXPERIMENT
-          #self.__training_data_loader      = self.__dataset.get_full_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+          #self.__training_data_loader      = self.__dataset.get_full_data_loader(batch_size = training_test_hyperparameters_object.get_batch_size())
           #NOTE END EXPERIMENT
           #NOTE DECOMMENTA riga sotto
-          self.__training_data_loader     = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+          if training_test_hyperparameters_object.use_validation_set() == True:
+             self.__training_data_loader, self.__validation_data_loader = self.__dataset.get_training_validation_data_loader(
+                validation_ratio  = training_test_hyperparameters_object.get_validation_split(),
+                batch_size        = training_test_hyperparameters_object.get_batch_size()
+             )
+          else:
+            self.__training_data_loader     = self.__dataset.get_training_data_loader(batch_size = training_test_hyperparameters_object.get_batch_size())
           
           self.__training_hyperparameters = training_test_hyperparameters_object
           self.__training_metrics         = TrainingMetrics()
@@ -115,7 +124,7 @@ class Model:
           self.__optimizer                = self.__init_optimizer()
         else:
           # Load test set (a PyTorch DataLoader object)
-          self.__test_data_loader         = self.__dataset.get_test_data_loader(batch_size = training_test_hyperparameters_object._batch_size)
+          self.__test_data_loader         = self.__dataset.get_test_data_loader(batch_size = training_test_hyperparameters_object.get_batch_size())
           self.__test_hyperparameters     = training_test_hyperparameters_object
         
         # Init loss function
@@ -267,6 +276,70 @@ class Model:
         torch.save(self.__model.state_dict(), GlobalPaths.TRAINED_MODELS / filename)
         print(f'[✓] Model saved in {filename}')
 
+    # NEW >>> To be tested
+    def __perform_validation_epoch(self, val_loader, num_classes):
+        """
+          Esegue un passo di validazione su un DataLoader e calcola le metriche.
+        """
+        self.__model.eval() # Imposta il modello in modalità valutazione
+        running_loss = 0.0
+
+        all_labels  = []
+        all_outputs = []
+        all_probs   = []
+
+        with torch.no_grad():
+            for batch_x, batch_y in val_loader:
+                # Prepara il batch (aggiungi dimensione canale se necessario)
+                if 'resnet' in self.__training_hyperparameters._model_name:
+                    batch_x = batch_x.unsqueeze(1)
+                
+                batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+                
+                if num_classes > 1:
+                    batch_y = batch_y.long() 
+                else:
+                    batch_y = batch_y.float()
+                
+                # Feed-forward pass
+                _, outputs = self.__feed_forward_pass(batch_x)
+                
+                # Loss e Metriche
+                if num_classes > 1:
+                    loss        = self.__criterion(outputs, batch_y.squeeze())
+                    probs       = F.softmax(outputs, dim=1)
+                    predictions = torch.argmax(probs, dim=1)
+                else:
+                    loss        = self.__criterion(outputs, batch_y.unsqueeze(1))
+                    probs       = torch.sigmoid(outputs)
+                    predictions = (probs > 0.5).int().squeeze()
+
+                running_loss += loss.item() * batch_x.size(0)
+
+                all_labels.extend(batch_y.detach().cpu().numpy())
+                all_outputs.extend(predictions.detach().cpu().numpy())
+                all_probs.append(probs.detach().cpu().numpy())
+        
+        # Calcolo metriche aggregate
+        val_loss  = running_loss / len(val_loader.dataset)
+        precision = precision_score(all_labels, all_outputs, average='macro', zero_division=0)
+        recall    = recall_score(all_labels, all_outputs, average='macro', zero_division=0)
+        f1        = f1_score(all_labels, all_outputs, average='macro', zero_division=0)
+        all_probs_np = np.concatenate(all_probs, axis=0)
+        
+        # Gestione AUC in multi-classe vs binario
+        if num_classes > 2:
+            auc           = roc_auc_score(all_labels, all_probs_np, multi_class='ovo')
+        elif num_classes == 2:
+            # Per il binario, usiamo le probabilità della classe 1
+            all_probs_np  = np.concatenate(all_probs)
+            auc           = roc_auc_score(all_labels, all_probs_np[:, 1]) 
+        else:
+            # Per il caso binario (output_size=1), AUC si calcola sulla probabilità diretta
+            auc           = roc_auc_score(all_labels, all_outputs)
+            
+        return val_loss, precision, recall, f1, auc
+
     def train(self):
         for epoch in tqdm(range(self.__training_hyperparameters._num_epochs), desc="Training Epochs", unit="epoch"):
           self.__model.train()    # setta il modello in modalità training
@@ -296,11 +369,11 @@ class Model:
             
             # Update loss
             if self.__training_hyperparameters._num_classes > 1:
-              loss = self.__criterion(outputs, batch_y.squeeze())     # remove any additional dimension from labels
-              probs = F.softmax(outputs, dim=1)                       # probabilities provided for each sample. required by auc_roc in multi-class scenarios
+              loss        = self.__criterion(outputs, batch_y.squeeze())     # remove any additional dimension from labels
+              probs       = F.softmax(outputs, dim=1)                       # probabilities provided for each sample. required by auc_roc in multi-class scenarios
               predictions = torch.argmax(probs, dim=1)                # discrete predictions provided for each sample: {0, 1, 2}
             else:
-              loss = self.__criterion(outputs, batch_y.unsqueeze(1).float())
+              loss        = self.__criterion(outputs, batch_y.unsqueeze(1).float())
               predictions = (torch.sigmoid(outputs) > 0.5).int().squeeze()
             
             # Save feature vectors during last epoch
@@ -319,10 +392,10 @@ class Model:
             all_probs.extend(probs.detach().cpu().numpy())
           
           # Training on i-th batch has ended. Compute epoch metrics
-          epoch_loss = running_loss / self.__dataset.get_training_test_set_length(split='train')
-          precision = precision_score(all_labels, all_outputs, average='macro', zero_division=0)
-          recall = recall_score(all_labels, all_outputs, average='macro', zero_division=0)
-          f1 = f1_score(all_labels, all_outputs, average='macro', zero_division=0)
+          epoch_loss  = running_loss / self.__dataset.get_training_test_set_length(split='train')
+          precision   = precision_score(all_labels, all_outputs, average='macro', zero_division=0)
+          recall      = recall_score(all_labels, all_outputs, average='macro', zero_division=0)
+          f1          = f1_score(all_labels, all_outputs, average='macro', zero_division=0)
           if self.__training_hyperparameters._num_classes > 2:
             auc = roc_auc_score(all_labels, all_probs, multi_class='ovo')
           else:
@@ -348,6 +421,84 @@ class Model:
         # Save the model
         if self.__training_hyperparameters._save_model:
           self.__save_model()
+
+    def train_with_validation(self, validation_split_ratio: float = 0.1):
+        """
+          Train the model with a validation set extracted from training set.
+
+          Input:
+            - validation_split_ratio (float): Training set fraction to be used as validation set during training (default is 0.1)
+        """
+        num_classes  = self.__training_hyperparameters.get_num_classes()
+        num_epochs   = self.__training_hyperparameters.get_num_epochs()
+       
+        print(f"Training on {len(self.__training_data_loader.dataset)} samples, Validation on {len(self.__validation_data_loader.dataset)} samples.")
+
+        for epoch in tqdm(range(num_epochs), desc='Training epochs with validation', unit='epoch'):
+          self.__model.train()
+          running_loss = 0.0
+
+          all_labels  = []
+          all_outputs = []
+          all_probs   = []
+
+          for batch_x, batch_y in self.__training_data_loader:
+            if 'resnet' in self.__training_hyperparameters._model_name:
+              batch_x = batch_x.unsqueeze(1)
+            
+            batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+            if num_classes > 1:
+               batch_y = batch_y.long()
+            else:
+               batch_y = batch_y.float()
+
+            self.__optimizer.zero_grad()
+            features, outputs = self.__feed_forward_pass(batch_x)
+
+            if num_classes > 1:
+               loss        = self.__criterion(outputs, batch_y.squeeze())
+               probs       = F.softmax(outputs, dim=1)
+               predictions = torch.argmax(probs, dim=1)
+            else:
+               loss        = self.__criterion(outputs, batch_y.unsqueeze(1))
+               probs       = torch.sigmoid(outputs)
+               predictions = (probs > 0.5).int().squeeze()
+
+            # Save feature vectors during last epoch
+            if epoch == num_epochs - 1:
+              self.__extracted_features.append(features.detach().cpu().numpy())
+              self.__extracted_labels.append(batch_y.detach().cpu().numpy())
+            
+            loss.backward()
+            self.__optimizer.step()
+            running_loss += loss.item() * batch_x.size(0)
+
+            all_labels.extend(batch_y.detach().cpu().numpy())
+            all_outputs.extend(predictions.detach().cpu().numpy())
+            all_probs.append(probs.detach().cpu().numpy())
+
+          train_loss      = running_loss / len(self.__training_data_loader.dataset)
+          train_precision = precision_score(all_labels, all_outputs, average='macro', zero_division=0)
+          train_recall    = recall_score(all_labels, all_outputs, average='macro', zero_division=0)
+          train_f1        = f1_score(all_labels, all_outputs, average='macro', zero_division=0)
+          all_probs_np    = np.concatenate(all_probs, axis=0)
+
+          if num_classes > 2:
+            train_auc = roc_auc_score(all_labels, all_probs_np, multi_class='ovo')
+          elif num_classes == 2:
+             train_auc = roc_auc_score(all_labels, all_probs_np[:, 1])
+          else:
+            train_auc = roc_auc_score(all_labels, all_outputs)
+          
+          self.__training_metrics.log(epoch, train_loss, train_precision, train_recall, train_f1, train_auc)
+          self.__training_metrics.print_last_classification()
+
+          # --- Validation step ---
+          val_loss, val_precision, val_recall, val_f1, val_auc = self.__perform_validation_epoch(self.__validation_data_loader, num_classes)
+          self.__training_metrics.log_validation(val_loss, val_precision, val_recall, val_f1, val_auc)
+          self.__training_metrics.print_last_validation()
+        
+        print("\nTraining with validation completed.")    
 
     def extract_features_from_testset(self):
       # Load the model
@@ -379,7 +530,7 @@ class Model:
       # Concatenate and save feature vectors and labels
       self.__save_extracted_feature_vectors()
 
-    ### NOTE NEW EVALUATING CNN
+    ### NEW >>> CNN in evaluation mode
     def evaluate_on_testset(self):
       """
           Valuta il modello sul test set calcolando le metriche di classificazione
@@ -447,7 +598,7 @@ class Model:
       self.__training_metrics.print_last_classification()
       self.__training_metrics.print_last_per_class_metrics()
 
-    ### NOTE END NEW
+    ### END NEW
 
     def __del__(self):
         print('\nDestructor called for the class Model')
@@ -521,9 +672,14 @@ class FeatureExtractor:
         self.__model_hyperparameters_object, 
         self.__training_test_hyperparameters_object
         )
+      # Train the model
       if self.__training_test_hyperparameters_object.get_mode() == 'train':
-        # Train the model
-        model.train()
+
+        if self.__training_test_hyperparameters_object.use_validation_set() == True:
+          model.train_with_validation()
+        else:
+          model.train()
+      
       else:
         if self.__training_test_hyperparameters_object.get_mode() == 'test':
           # Extract features from the test set

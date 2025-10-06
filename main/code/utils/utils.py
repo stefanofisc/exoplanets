@@ -78,18 +78,22 @@ class TrainingMetrics:
     f1:         List[float] = field(default_factory=list)
     auc_roc:    List[float] = field(default_factory=list)
 
-    # NEW >>> metrics per class
+    # NEW >>> Validation metrics
+    val_loss:      List[float] = field(default_factory=list)
+    val_precision: List[float] = field(default_factory=list)
+    val_recall:    List[float] = field(default_factory=list)
+    val_f1:        List[float] = field(default_factory=list)
+    val_auc_roc:   List[float] = field(default_factory=list)
+
     per_class_precision: Dict[int, List[float]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
     per_class_recall:    Dict[int, List[float]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
     per_class_f1:        Dict[int, List[float]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
     
-    # NEW >>> confusion matrix breakdown
     tp: Dict[int, List[int]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
     tn: Dict[int, List[int]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
     fp: Dict[int, List[int]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
     fn: Dict[int, List[int]] = field(default_factory=lambda: {0: [], 1: [], 2: []})
 
-    # NEW >>> misclassification rate: global and per class
     misclassification_rate:             List[float] = field(default_factory=list)
     per_class_misclassification_rate:   Dict[int, List[float]] = field(default_factory=lambda: {0: [], 1: [], 2: []})  # NEW
 
@@ -114,6 +118,17 @@ class TrainingMetrics:
         self.epochs.append(epoch)
         self.loss.append(loss)
 
+    # NEW >>> Logging validation metrics
+    def log_validation(self, loss, precision, recall, f1, auc):
+        """
+            Aggiunge i valori di validation per una singola epoca.
+        """
+        self.val_loss.append(loss)
+        self.val_precision.append(precision)
+        self.val_recall.append(recall)
+        self.val_f1.append(f1)
+        self.val_auc_roc.append(auc)
+
     def print_last_classification(self):
         """
             Stampa i valori dell’ultima epoca
@@ -134,7 +149,6 @@ class TrainingMetrics:
         """
         # NOTE DEBUG END COMMENTATO IN DATA 2025-09-26
 
-    # NEW >>> stampa tabellare con metriche per classe
     def print_last_per_class_metrics(self):
         epoch = self.epochs[-1]
         data = {
@@ -157,6 +171,13 @@ class TrainingMetrics:
         """
         print(f"[Epoch {self.epochs[-1]}] Loss: {self.loss[-1]:.6f}")
 
+    # NEW >>> Print validation metrics
+    def print_last_validation(self):
+        """
+            Print validation metrics of the last epoch
+        """
+        print(f"VAL — Loss: {self.val_loss[-1]:.4f}, Precision: {self.val_precision[-1]:.3f}, Recall: {self.val_recall[-1]:.3f}, F1: {self.val_f1[-1]:.3f}, AUC: {self.val_auc_roc[-1]:.3f}")
+
     def plot_metrics(self, output_path: str, model_name: str, optimizer: str, num_epochs: int, df_name : str):
         """
           Salva i plot delle metriche con un nome file coerente con lo stile:
@@ -169,7 +190,36 @@ class TrainingMetrics:
         """
         os.makedirs(output_path, exist_ok=True)  # crea la directory se non esiste
         today = get_today_string()
-        metrics = ['loss', 'precision', 'recall', 'f1', 'auc_roc']
+        
+        # OLD >>> metrics = ['loss', 'precision', 'recall', 'f1', 'auc_roc']
+        # NEW >>>
+        metrics = [
+            ('loss', self.loss, self.val_loss),
+            ('precision', self.precision, self.val_precision), 
+            ('recall', self.recall, self.val_recall), 
+            ('f1', self.f1, self.val_f1),
+            ('auc_roc', self.auc_roc, self.val_auc_roc)            
+        ]
+        # NEW >>>
+        for metric, train_values, val_values in metrics:
+            plt.figure(figsize=(8,5))
+            plt.plot(self.epochs, train_values, label=f'Train {metric}')
+
+            # Plot validation only if data exists
+            if val_values:
+                plt.plot(self.epochs, val_values, label=f'Validation {metric}', linestyle='--')
+
+            plt.xlabel('Epoch')
+            plt.ylabel(metric.capitalize())
+            plt.title(f'Training & Validation {metric.capitalize()} Over Epochs')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            filename = f"{today}_{model_name}_{optimizer}_{num_epochs}_{df_name}_{metric}.png"
+            plt.savefig(os.path.join(output_path, filename), dpi=300)
+            plt.close()
+        """
+        # OLD >>>
         for metric in metrics:
             plt.figure(figsize=(8, 5))
             plt.plot(self.epochs, getattr(self, metric), label=metric)
@@ -182,7 +232,8 @@ class TrainingMetrics:
             filename = f"{today}_{model_name}_{optimizer}_{num_epochs}_{df_name}_{metric}.png"
             plt.savefig(os.path.join(output_path, filename), dpi=300)
             plt.close()
-    
+        """
+
     def plot_loss(self, output_path: str = None, filename: str = None):
         """
             Plotta la loss in funzione delle epoche
