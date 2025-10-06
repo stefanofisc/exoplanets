@@ -378,7 +378,77 @@ class Model:
       
       # Concatenate and save feature vectors and labels
       self.__save_extracted_feature_vectors()
-      
+
+    ### NOTE NEW EVALUATING CNN
+    def evaluate_on_testset(self):
+      """
+          Valuta il modello sul test set calcolando le metriche di classificazione
+          tramite la classe TrainingMetrics.
+
+          - Carica il modello addestrato dai pesi salvati
+          - Esegue il feed-forward sul test set
+          - Calcola accuracy, precision, recall, f1, auc, confusion matrix
+          - Stampa le metriche aggregate e per classe
+      """
+      saved_model_name  = self.__test_hyperparameters._saved_model_name
+      model_path        = GlobalPaths.TRAINED_MODELS / saved_model_name
+
+      if not os.path.exists(model_path):
+          raise ValueError(f'[ERROR] No occurrence found in "trained_models/" for {saved_model_name}.')
+
+      # Carica pesi modello e mettilo in modalità inferenza
+      self.__model.load_state_dict(torch.load(model_path, weights_only=True))
+      self.__model.eval()
+
+      all_preds = []
+      all_labels = []
+      all_probas = []
+
+      with torch.no_grad():
+          for batch_x, batch_y in self.__test_data_loader:
+              batch_x = batch_x.unsqueeze(1)  # (batch_size, signal_length) → (batch_size, channels, signal_length)
+              batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+
+              # Feed-forward pass (usa wrapper per coerenza con train/test features)
+              features, outputs = self.__feed_forward_pass(batch_x)
+              # Deal with binary or multi-class classification
+              if self.__test_hyperparameters._num_classes > 1:
+                  probs = F.softmax(outputs, dim=1)
+                  preds = torch.argmax(probs, dim=1)
+              else:
+                  probs = torch.sigmoid(outputs)
+                  preds = (probs > 0.5).int().squeeze()
+
+              # Colleziona predizioni e labels
+              all_preds.append(preds.cpu().numpy())
+              all_labels.append(batch_y.cpu().numpy())
+              all_probas.append(probs.cpu().numpy())
+
+      # Concatena
+      y_pred = np.concatenate(all_preds)
+      y_true = np.concatenate(all_labels)
+      y_proba = np.concatenate(all_probas)
+
+      # Se sei in test mode puro, qui self.__training_metrics non esiste ancora
+      if not hasattr(self, "_Model__training_metrics"):
+          self.__training_metrics = TrainingMetrics()
+
+      # Calcola metriche tramite TrainingMetrics
+      self.__training_metrics.compute_and_log_classification_metrics(
+          y_true=y_true,
+          y_pred=y_pred,
+          y_proba=y_proba,
+          epoch=0,
+          loss=0.0,
+          model_supports_proba=True
+      )
+
+      # Stampa metriche
+      self.__training_metrics.print_last_classification()
+      self.__training_metrics.print_last_per_class_metrics()
+
+    ### NOTE END NEW
+
     def __del__(self):
         print('\nDestructor called for the class Model')
 
@@ -455,8 +525,14 @@ class FeatureExtractor:
         # Train the model
         model.train()
       else:
-        # Extract features from the test set
-        model.extract_features_from_testset()
+        if self.__training_test_hyperparameters_object.get_mode() == 'test':
+          # Extract features from the test set
+          model.extract_features_from_testset()
+        elif self.__training_test_hyperparameters_object.get_mode() == 'inference':
+          # Model assessment on test set
+          model.evaluate_on_testset()
+        else:
+           raise ValueError(f'Expected mode values: train, test, inference. Got {self.__training_test_hyperparameters_object.get_mode()} instead.')
       
     def main(self):
       self.__feature_extraction()

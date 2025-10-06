@@ -1,7 +1,7 @@
-mode:         'test'         # mode = {train, test}
+mode:         'inference'         # mode = {train, test, inference}
 model_name:   'resnet18'        # Choose the network architecture to be used as feature extractor. Values: {vgg, resnet} 
 #optimizer:    'adam'          # Choose the optimization algorithm. Values: {adam, sgd}
-#num_classes:  3               # Number of output classes. 
+num_classes:  3               # Number of output classes. 
 #weight_decay: 0.0001          # Decomment when using Stochastic Gradient Descent
 #momentum:     0.99            # Decomment when using Stochastic Gradient Descent
 #learning_rate: 0.001
