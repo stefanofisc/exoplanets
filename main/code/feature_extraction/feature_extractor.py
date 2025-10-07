@@ -498,7 +498,22 @@ class Model:
           self.__training_metrics.log_validation(val_loss, val_precision, val_recall, val_f1, val_auc)
           self.__training_metrics.print_last_validation()
         
-        print("\nTraining with validation completed.")    
+        print("\nTraining with validation completed.")
+        # Plot training and validation metrics once training is completed. Use methods from the class TrainingMetrics
+        self.__training_metrics.plot_metrics(
+          output_path = GlobalPaths.TRAINING_METRICS_FEATURE_EXTRACTOR,
+          model_name  = self.__training_hyperparameters._model_name,
+          optimizer   = self.__training_hyperparameters._optimizer,
+          num_epochs  = self.__training_hyperparameters._num_epochs,
+          df_name     = self.__dataset.get_catalog_name()
+          )
+        
+        # Concatenate and save feature vectors and labels
+        self.__save_extracted_feature_vectors()
+
+        # Save the model
+        if self.__training_hyperparameters._save_model:
+          self.__save_model()
 
     def extract_features_from_testset(self):
       # Load the model
