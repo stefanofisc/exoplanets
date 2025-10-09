@@ -627,9 +627,10 @@ class FeatureExtractor:
       self.__dataset_handler                      = self.__init_dataset()
       self.__model_hyperparameters_object         = None
       self.__model                                = None
-      self.__training_test_hyperparameters_object = None
       self.__init_model()
-      self.__init_training_test_hyperparameters()
+      # OLD self.__training_test_hyperparameters_object = None
+      # NEW >>>
+      self.__training_test_hyperparameters_object = self.__init_training_test_hyperparameters()
     
     def __init_dataset(self):
       # 1. Initialize Dataset object with config_dataset.yaml
@@ -645,7 +646,9 @@ class FeatureExtractor:
       with open(GlobalPaths.CONFIG / GlobalPaths.config_feature_extractor_file, 'r') as fe:
           config_fe = yaml.safe_load(fe)
       
-      if config_fe['model_name'] == 'vgg':
+      model_name = config_fe['model_name']
+      
+      if model_name == 'vgg':
           # load data from config_vgg.yaml
           self.__model_hyperparameters_object = InputVariablesVGG19.get_input_hyperparameters(
              GlobalPaths.CONFIG / GlobalPaths.config_vgg_file
@@ -659,8 +662,9 @@ class FeatureExtractor:
               self.__model_hyperparameters_object.get_fc_layers_num(),
               self.__model_hyperparameters_object.get_fc_units(),
               self.__model_hyperparameters_object.get_fc_output_size()
-              )
-          print(self.__model)
+              ).to(device)  # NEW >>> 2025-10-09
+          
+          print('Initialized VGG19 model')
       else:
           # load data from config_resnet.yaml
           self.__model_hyperparameters_object = InputVariablesResnet.get_input_hyperparameters(
@@ -674,10 +678,11 @@ class FeatureExtractor:
             self.__model_hyperparameters_object.get_input_size(),
             self.__model_hyperparameters_object.get_fc_output_size()
             ).to(device)
-          print(self.__model)
+          
+          print(f'Initialized {model_name} model.')
     
     def __init_training_test_hyperparameters(self):
-        self.__training_test_hyperparameters_object = InputVariablesModelTraining.get_input_hyperparameters(GlobalPaths.CONFIG / 'config_feature_extractor.yaml')
+        return InputVariablesModelTraining.get_input_hyperparameters(GlobalPaths.CONFIG / GlobalPaths.config_feature_extractor_file)
 
     def __feature_extraction(self):
       # Initialize Model object

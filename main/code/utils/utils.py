@@ -48,6 +48,7 @@ class GlobalPaths:
     config_data_preparation         =   'config_data_preparation.yaml'
     config_manifold_learning        =   'config_manifold_learning.yaml'
     config_custom_projection        =   'config_custom_projection.yaml'
+    config_umap_file                =   'config_umap.yaml'
     #TODO Put config filenames here
     
     # dataset filenames

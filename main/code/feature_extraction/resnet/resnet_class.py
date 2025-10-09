@@ -13,6 +13,7 @@ from    pathlib     import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'utils'))
 from    utils       import GlobalPaths, get_device
 
+#NOTE Insert this class in a separate file in future implementations, and update import in resnet_tf_class and feature_extraction.py files
 @dataclass
 class InputVariablesResnet:
     # Model hyperparameters
@@ -60,6 +61,10 @@ class InputVariablesResnet:
 class ResidualBlock(nn.Module):
     """
         Figure 2. Residual learning: a building block.
+        Padding = 1 explanation: for a kernel size of 3 and a stride of 1, 
+        a padding of 1 is mathematically necessary to ensure that the spatial 
+        dimension (signal length) of the output tensor is exactly the same as 
+        that of the input tensor.
     """
     def __init__(self, in_channels, out_channels, stride = 1, downsample = None):
         super(ResidualBlock, self).__init__()
@@ -87,29 +92,33 @@ class ResidualBlock(nn.Module):
 
 class ResNet(nn.Module):
     """
-        Resnet-34 architecture. Figure 3 (34-layer residual). Here, the network is
+        Resnet-18/34 architecture. Figure 3 (34-layer residual). Here, the network is
         intended to process 1D signals.
     """
     def __init__(self, block, num_layers, input_size = 500, output_size = 3):
         super(ResNet, self).__init__()
         # Set the architecture based on the number of layers given as input
         if num_layers == 18:
-          # Resnet-18
-          layers = [2, 2, 2, 2]
+          layers = [2, 2, 2, 2] # Resnet-18
         else:
-          # Resnet-34
-          layers = [3, 4, 6, 3]
+          layers = [3, 4, 6, 3] # Resnet-34
         
-        self.inplanes = 64
-        self.__feature_vector = []
-        #input_channels = 1  as you process global views (which size is [1, n, 1])
-        # 7 x 1 convolution, halving the input dimension (stride = 2)
+        self.inplanes           = 64
+        self.__feature_vector   = []
+
+        # 1. First layers
+        # Input size is (Batch, Length, Channels), then (Batch, 201, 1).
+        # With kernel size 7 and stride of 2, padding = 3 is the exact numeric value esatto 
+        # computed to ensure the output dimension is halved (or, more precisely, ⌈L_in/S⌉, where S=2).
         self.conv1 = nn.Sequential(
             nn.Conv1d(1, 64, kernel_size = 7, stride = 2, padding = 3),
             nn.BatchNorm1d(64),
             nn.ReLU()
         )
+
         self.maxpool    = nn.MaxPool1d(kernel_size = 3, stride = 2, padding = 1)
+
+        # 2. Residual layers (layer0, layer1, layer2, layer3)
         self.layer0     = self._make_layer(block, 64, layers[0], stride = 1)
         self.layer1     = self._make_layer(block, 128, layers[1], stride = 2)
         self.layer2     = self._make_layer(block, 256, layers[2], stride = 2)
@@ -155,17 +164,6 @@ class ResNet(nn.Module):
         return x                    # shape: torch.Size([1, 512])
 
     def forward(self, x):
-        #NOTE DEBUG EXPERIMENTAL
-        """ Ora in _forward_features
-        x = self.conv1(x)
-        x = self.maxpool(x)
-        x = self.layer0(x)
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1) # flattening
-        """
         x                       = self._forward_features(x)
         self.__feature_vector   = x # Save the flattened output of the feature extraction block
         x = self.fc(x)
