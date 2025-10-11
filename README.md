@@ -74,6 +74,12 @@ cd main
 python3 code/dimensionality_reduction/tsne_class.py > output_files/<name_of_output_file>.out
 ```
 
+After execution, the following files will be generated:
+
+- [In data/features_step2_tsne/]: A .npy file containing the feature vectors projected in the lower dimensional embedding by t-SNE;
+- [In output_files/]: A .out file listing all the operations performed during the execution;
+- [In output_files/plot_tsne/]: A .png file representing the projected feature vectors. Here's an example of three-dimensional projection of feature vectors produced by Resnet-18 on the Kepler Q1-Q17 Data Release 25 dataset: https://drive.google.com/file/d/1VufXdxVzRNSRHCqdGfdoSESjP7-KC0hi/view?usp=sharing
+
 2.2. Projecting feature vectors with MLP:
 Configuration files to define input parameters:
 - confid_mlp.yaml
