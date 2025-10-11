@@ -24,7 +24,7 @@ To ensure code reusability and adaptability for other projects, the system is de
 
 Two execution modes are available:
 * Individual Modules: Execute specific components independently for targeted analysis or debugging.
-*  Complete Pipeline: Automated execution of all modules in sequence for end-to-end processing.
+* Complete Pipeline: Automated execution of all modules in sequence for end-to-end processing.
 
 ## Configuration Files
 
