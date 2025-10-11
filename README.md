@@ -53,9 +53,9 @@ python3 main/code/feature_extraction/feature_extractor.py > main/output_files/<n
 
 After execution, the following files will be generated:
 
-- [data/features_step1_cnn/]: Two .npy files containing the extracted feature vectors and the corresponding labels of the processed signals.
-- [output_files/]: A .out file listing all the operations performed during the execution.
-- [output_files/training_metrics/feature_extractor/]: Five .png files showing the evolution of evaluation metrics (Loss, AUC, Precision, Recall, F1-score) on the training and validation sets (if used).
+- [In data/features_step1_cnn/]: Two .npy files containing the extracted feature vectors and the corresponding labels of the processed signals.
+- [In output_files/]: A .out file listing all the operations performed during the execution.
+- [In output_files/training_metrics/feature_extractor/]: Five .png files showing the evolution of evaluation metrics (Loss, AUC, Precision, Recall, F1-score) on the training and validation sets (if used).
 
 
 ### 2. 
