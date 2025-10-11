@@ -42,9 +42,9 @@ This module allows you to train and test a Convolutional Neural Network (CNN) in
 It is also possible to use the trained CNN as a classifier by setting it to inference mode.
 
 Configuration files to define input parameters:
--- config_dataset.yaml
--- config_feature_extractor.yaml
--- config_resnet.yaml (or config_vgg.yaml), depending on the CNN architecture you wish to use as the feature extractor)
+- config_dataset.yaml
+- config_feature_extractor.yaml
+- config_resnet.yaml (or config_vgg.yaml), depending on the CNN architecture you wish to use as the feature extractor)
 
 ```bash
 conda activate <your_env_name>
