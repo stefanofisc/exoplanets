@@ -48,7 +48,8 @@ Configuration files to define input parameters:
 
 ```bash
 conda activate <your_env_name>
-python3 main/code/feature_extraction/feature_extractor.py > main/output_files/<name_of_output_file>.out
+cd main
+python3 code/feature_extraction/feature_extractor.py > output_files/<name_of_output_file>.out
 ```
 
 After execution, the following files will be generated:
@@ -58,7 +59,48 @@ After execution, the following files will be generated:
 - [In output_files/training_metrics/feature_extractor/]: Five .png files showing the evolution of evaluation metrics (Loss, AUC, Precision, Recall, F1-score) on the training and validation sets (if used).
 
 
-### 2. 
+### 2. Dimensionality Reduction
+Questo modulo prende i vettori di caratteristiche prodotti dal modulo precedente e li proietta in un sottospazio. E' possibile proiettare i dati in spazi a bassa dimensionalità utilizzando i seguenti metodi:
+1. t-Stochastic Neighbor Embedding;
+2. Multi-Layer Perceptron addestrato per apprendere il mapping di t-SNE;
+3. Parametric UMAP
+
+2.1. Projecting feature vectors with t-SNE algorithm:
+Configuration files to define input parameters:
+- config_dataset.yaml
+- confid_tsne.yaml
+
+```bash
+cd main
+python3 code/dimensionality_reduction/tsne_class.py > output_files/<name_of_output_file>.out
+```
+
+2.2. Projecting feature vectors with MLP:
+Configuration files to define input parameters:
+- config_dataset.yaml
+- confid_mlp.yaml
+
+```bash
+cd main
+python3 code/dimensionality_reduction/mlp_class.py > output_files/<name_of_output_file>.out
+```
+
+2.3. Projecting feature vectors with Parametric UMAP:
+Configuration files to define input parameters:
+- config_dataset.yaml
+- confid_umap.yaml
+
+```bash
+cd main
+python3 code/dimensionality_reduction/umap_class.py > output_files/<name_of_output_file>.out
+```
+
+### 3. Classification
+<description of the module>
+
+Configuration files to define input parameters:
+- 
+-
 
 ### Complete Pipeline Execution
 **Note:** This function is still not available. We plan to build this module in future implementations.
