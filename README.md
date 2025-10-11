@@ -35,8 +35,33 @@ For detailed parameter descriptions and usage instructions, refer to the respect
 **Note:** Parameters are loaded by individual modules and are also applied during Complete Pipeline execution.
 
 ## Usage
+Di seguito forniamo un esempio di utilizzo di ognuno dei moduli sviluppati.
+
+### 1. Feature Extraction with Convolutional Neural Network (CNN)
+This module allows you to train and test a Convolutional Neural Network (CNN) in order to extract the feature vectors from the last feature extraction layer of the model.
+It is also possible to use the trained CNN as a classifier by setting it to inference mode.
+
+Configuration files to define input parameters:
+-- config_dataset.yaml
+-- config_feature_extractor.yaml
+-- config_resnet.yaml (or config_vgg.yaml), depending on the CNN architecture you wish to use as the feature extractor)
+
+```bash
+conda activate <your_env_name>
+python3 main/code/feature_extraction/feature_extractor.py > main/output_files/<name_of_output_file>.out
+```
+
+After execution, the following files will be generated:
+
+- [data/features_step1_cnn/]: Two .npy files containing the extracted feature vectors and the corresponding labels of the processed signals.
+- [output_files/]: A .out file listing all the operations performed during the execution.
+- [output_files/training_metrics/feature_extractor/]: Five .png files showing the evolution of evaluation metrics (Loss, AUC, Precision, Recall, F1-score) on the training and validation sets (if used).
+
+
+### 2. 
 
 ### Complete Pipeline Execution
+**Note:** This function is still not available. We plan to build this module in future implementations.
 ```bash
 python3 main_pipeline.py
 ```
