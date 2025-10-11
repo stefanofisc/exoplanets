@@ -67,7 +67,6 @@ Questo modulo prende i vettori di caratteristiche prodotti dal modulo precedente
 
 2.1. Projecting feature vectors with t-SNE algorithm:
 Configuration files to define input parameters:
-- config_dataset.yaml
 - confid_tsne.yaml
 
 ```bash
@@ -77,7 +76,6 @@ python3 code/dimensionality_reduction/tsne_class.py > output_files/<name_of_outp
 
 2.2. Projecting feature vectors with MLP:
 Configuration files to define input parameters:
-- config_dataset.yaml
 - confid_mlp.yaml
 
 ```bash
@@ -88,6 +86,7 @@ python3 code/dimensionality_reduction/mlp_class.py > output_files/<name_of_outpu
 2.3. Projecting feature vectors with Parametric UMAP:
 Configuration files to define input parameters:
 - config_dataset.yaml
+- config_resnet.yaml (or config_vgg.yaml), depending on the CNN you want to use as encoder.
 - confid_umap.yaml
 
 ```bash
