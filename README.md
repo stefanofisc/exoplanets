@@ -13,11 +13,10 @@ A Deep Learning pipeline combining Convolutional Neural Networks, Dimensionality
 
 ## Pipeline Execution
 
-1. **Dataset Preprocessing** - Creating, loading, training-test split
-2. **Feature Extraction** - Identification and extraction of relevant astronomical features
-3. **Dimensionality Reduction** - Optimization of feature space for improved performance
-4. **Classification** - Model training and exoplanet classification
-
+1. **Dataset Preprocessing** - Creating or loading training-test split
+2. **Feature Extraction** - Feature extraction from input signals with VGG-19, Resnet-18 or Resnet-34
+3. **Dimensionality Reduction** - Projecting high-dimensional feature vectors into lower dimensional spaces
+4. **Classification** - Classifying the projected feature vectors with linear/non-linear classifiers
 ## Execution Modes
 
 To ensure code reusability and adaptability for other projects, the system is designed with independent, modular components that can be combined to create a complete ML pipeline.
