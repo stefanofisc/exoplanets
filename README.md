@@ -59,7 +59,7 @@ After execution, the following files will be generated:
 
 
 ### 2. Dimensionality Reduction
-Questo modulo prende i vettori di caratteristiche prodotti dal modulo precedente e li proietta in un sottospazio. E' possibile proiettare i dati in spazi a bassa dimensionalità utilizzando i seguenti metodi:
+This module takes the feature vectors produced by the previous module and projects them into a subspace. It is possible to project data into low-dimensional spaces using the following methods:
 1. t-Stochastic Neighbor Embedding;
 2. Multi-Layer Perceptron addestrato per apprendere il mapping di t-SNE;
 3. Parametric UMAP
@@ -101,9 +101,8 @@ python3 code/dimensionality_reduction/umap_class.py > output_files/<name_of_outp
 
 ### 3. Classification
 <description of the module>
-
 Configuration files to define input parameters:
-- 
+- config_classifier.yaml
 -
 
 ### Complete Pipeline Execution
