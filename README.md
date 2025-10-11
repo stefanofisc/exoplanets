@@ -35,7 +35,7 @@ For detailed parameter descriptions and usage instructions, refer to the respect
 **Note:** Parameters are loaded by individual modules and are also applied during Complete Pipeline execution.
 
 ## Usage
-Di seguito forniamo un esempio di utilizzo di ognuno dei moduli sviluppati.
+Below is an example of how each of the modules developed can be used.
 
 ### 1. Feature Extraction with Convolutional Neural Network (CNN)
 This module allows you to train and test a Convolutional Neural Network (CNN) in order to extract the feature vectors from the last feature extraction layer of the model. The CNNs available are: VGG-19, Resnet-18, Resnet-34.
