@@ -38,7 +38,7 @@ For detailed parameter descriptions and usage instructions, refer to the respect
 Di seguito forniamo un esempio di utilizzo di ognuno dei moduli sviluppati.
 
 ### 1. Feature Extraction with Convolutional Neural Network (CNN)
-This module allows you to train and test a Convolutional Neural Network (CNN) in order to extract the feature vectors from the last feature extraction layer of the model.
+This module allows you to train and test a Convolutional Neural Network (CNN) in order to extract the feature vectors from the last feature extraction layer of the model. The CNNs available are: VGG-19, Resnet-18, Resnet-34.
 It is also possible to use the trained CNN as a classifier by setting it to inference mode.
 
 Configuration files to define input parameters:
