@@ -11,7 +11,7 @@ A Deep Learning pipeline combining Convolutional Neural Networks, Dimensionality
 
 **Download Link:** https://drive.google.com/file/d/18rUMHXPRWOwFYCNCZ-ph27aB-qbEPUtO/view?usp=sharing
 
-## Pipeline Execution
+## Pipeline Modules
 
 1. **Dataset Preprocessing** - Creating or loading training-test split
 2. **Feature Extraction** - Feature extraction from input signals with VGG-19, Resnet-18 or Resnet-34
