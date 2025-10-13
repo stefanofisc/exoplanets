@@ -120,7 +120,8 @@ python3 code/dimensionality_reduction/umap_class.py > output_files/<name_of_outp
 ```
 
 ### 3. Classification
-<description of the module>
+**NOTE. 2025-10-13: As we are currently working on the writing of this README file, the description of the usage of this module is still in progress.**
+
 Configuration files to define input parameters:
 - config_classifier.yaml
 -
