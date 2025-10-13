@@ -3,7 +3,7 @@
 ## Introduction
 A Deep Learning pipeline combining Convolutional Neural Networks, Dimensionality Reduction and Classifiers to perform a multi-class classification of NASA's Kepler and TESS Threshold-Crossing Events.
 
-**NOTE**. Currently, any use of the code for publication purposes is prohibited without my consent (Stefano Fiscale).
+**NOTE**. Currently, any use of the code for publication purposes is not allowed without my consent (Stefano Fiscale).
 
 ---
 
