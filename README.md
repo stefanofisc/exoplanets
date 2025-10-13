@@ -98,12 +98,12 @@ python3 code/dimensionality_reduction/mlp_class.py > output_files/<name_of_outpu
 ```
 
 After execution, the following files will be generated:
-[In data/features_step2_mlp]: Two .npy files containing the training set feature vectors learned by the MLP and the related dispositions (PC, AFP, NTP). These two files represent the input dataset to train the classifier in the last module;
-[In output_files/]: A .out file listing all the operations performed during the execution;
-[In output_files/plot_mlp/]: Five .png file showing: 
-(i) the training loss function;
-(ii) the distribution of the projected feature vectors in the lower dimensional space (if plot_single=True);
-(iii-v) the distribution of the projected feature vectors for each class (if plot_per_class=True).
+- [In data/features_step2_mlp]: Two .npy files containing the training set feature vectors learned by the MLP and the related dispositions (PC, AFP, NTP). These two files represent the input dataset to train the classifier in the last module;
+- [In output_files/]: A .out file listing all the operations performed during the execution;
+- [In output_files/plot_mlp/]: Five .png file showing: 
+  - (i) the training loss function;
+  - (ii) the distribution of the projected feature vectors in the lower dimensional space (if plot_single=True);
+  - (iii-v) the distribution of the projected feature vectors for each class (if plot_per_class=True).
 [In trained_models/]: A .pt file containing the weights of the trained model (if save_model=True). These weights have to be loaded when executing the module in 'test' mode.
 
 To project the test set feature vectors, set the mlp in 'test' mode, specify the name of the model in saved_model_name to load the weights of the trained MLP. The variable filename_labels can be commented as the coordinates of the data in the lower dimensional space will be defined by the MLP itself.
