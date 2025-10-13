@@ -37,14 +37,15 @@ For detailed parameter descriptions and usage instructions, refer to the respect
 Below is an example of how each of the modules developed can be used.
 
 ### 1. Feature Extraction with Convolutional Neural Network (CNN)
-This module allows you to train and test a Convolutional Neural Network (CNN) in order to extract the feature vectors from the last feature extraction layer of the model. The CNNs available are: VGG-19, Resnet-18, Resnet-34.
+This module can be used to train and test a Convolutional Neural Network (CNN) with the aim of extracting the feature vectors from the last convolutional layer of the model. The CNNs available are: VGG-19, Resnet-34 and Resnet-18.
 It is also possible to use the trained CNN as a classifier by setting it to inference mode.
 
 Configuration files to define input parameters:
 - config_dataset.yaml
 - config_feature_extractor.yaml
-- config_resnet.yaml (or config_vgg.yaml), depending on the CNN architecture you wish to use as the feature extractor)
+- config_resnet.yaml (or config_vgg.yaml), depending on the CNN architecture you wish to use as the feature extractor.
 
+To execute the module, run the following command in your terminal:
 ```bash
 conda activate <your_env_name>
 cd main
@@ -59,15 +60,18 @@ After execution, the following files will be generated:
 
 
 ### 2. Dimensionality Reduction
-This module takes the feature vectors produced by the previous module and projects them into a subspace. It is possible to project data into low-dimensional spaces using the following methods:
+This module takes as input the feature vectors produced by the CNN, thus projecting them into a lower-dimensional space. Feature vectors can be projected using the following methods:
 1. t-Stochastic Neighbor Embedding;
-2. Multi-Layer Perceptron addestrato per apprendere il mapping di t-SNE;
+2. Multi-Layer Perceptron trained to learn the t-SNE mapping;
 3. Parametric UMAP
 
 2.1. Projecting feature vectors with t-SNE algorithm:
+The first step is to project the training set feature vectors in the lower dimensional embedding defined by t-SNE. These projections will be used in Step 2.2. as target on which to train the MLP. 
+
 Configuration files to define input parameters:
 - confid_tsne.yaml
 
+To execute the module, run the following command in your terminal:
 ```bash
 cd main
 python3 code/dimensionality_reduction/tsne_class.py > output_files/<name_of_output_file>.out
@@ -79,14 +83,30 @@ After execution, the following files will be generated:
 - [In output_files/]: A .out file listing all the operations performed during the execution;
 - [In output_files/plot_tsne/]: A .png file representing the projected feature vectors. Here's an example of three-dimensional projection of feature vectors produced by Resnet-18 on the Kepler Q1-Q17 Data Release 25 dataset: https://drive.google.com/file/d/1VufXdxVzRNSRHCqdGfdoSESjP7-KC0hi/view?usp=sharing
 
-2.2. Projecting feature vectors with MLP:
+2.2. Training the MLP and projecting test set feature vectors:
+At this stage, the MLP is trained to learn the t-SNE mapping. The input dataset **D** consists of pairs (**x**,**y**), where **x** is a feature vector produced by the CNN in the first module, and **y** represents the projection of the vector in the lower dimensional space.
+
 Configuration files to define input parameters:
 - confid_mlp.yaml
 
+In this configuration file, set the MLP in 'train' mode and specify the name of .npy files containing the pairs (**x**,**y**): variables filename_samples and filename_labels. Set the variable filename_dispositions to the name of the .npy file containing the labels (i.e. PC, AFP, NTP).
+
+To execute the module, run the following command in your terminal:
 ```bash
 cd main
 python3 code/dimensionality_reduction/mlp_class.py > output_files/<name_of_output_file>.out
 ```
+
+After execution, the following files will be generated:
+[In data/features_step2_mlp]: Two .npy files containing the training set feature vectors learned by the MLP and the related dispositions (PC, AFP, NTP). These two files represent the input dataset to train the classifier in the last module;
+[In output_files/]: A .out file listing all the operations performed during the execution;
+[In output_files/plot_mlp/]: Five .png file showing: 
+(i) the training loss function;
+(ii) the distribution of the projected feature vectors in the lower dimensional space (if plot_single=True);
+(iii-v) the distribution of the projected feature vectors for each class (if plot_per_class=True).
+[In trained_models/]: A .pt file containing the weights of the trained model (if save_model=True). These weights have to be loaded when executing the module in 'test' mode.
+
+To project the test set feature vectors, set the mlp in 'test' mode, specify the name of the model in saved_model_name to load the weights of the trained MLP. The variable filename_labels can be commented as the coordinates of the data in the lower dimensional space will be defined by the MLP itself.
 
 2.3. Projecting feature vectors with Parametric UMAP:
 Configuration files to define input parameters:
