@@ -1,14 +1,14 @@
-mode:             'train'         # mode = {train, test, inference}
-validation_set:   True
+mode:             'train'         # Values: {train, test, inference}. train/test modes: extract features from training/test set; inference mode: use the CNN as classifier
+validation_set:   True            # Choose whether to use validation set during training or not. Values: {True, False}
 validation_split: 0.1
-model_name:       'resnet18'      # Choose the network architecture to be used as feature extractor. Values: {vgg, resnet} 
-optimizer:        'sgd'          # Choose the optimization algorithm. Values: {adam, sgd}
+model_name:       'resnet18'      # Choose the network architecture to be used as feature extractor. Values: {vgg, resnet18, resnet34} 
+optimizer:        'sgd'           # Optimization algorithm. Values: {adam, sgd}
 num_classes:      3               # Number of output classes. 
-weight_decay:     0.0001          # Decomment when using Stochastic Gradient Descent
-momentum:         0.99            # Decomment when using Stochastic Gradient Descent
+weight_decay:     0.0001          # Parameter for Stochastic Gradient Descent
+momentum:         0.99            # Parameter for Stochastic Gradient Descent
 learning_rate:    0.001
 batch_size:       128
 num_epochs:       50
-save_model:       False            # variabile booleana per salvataggio modello. default value: False
-#purpose:         'from_scratch'     # Opzionale. Considera solo se save_model = True. values: {from_scratch, finetuned}
-#saved_model_name: '2025-09-29_resnet18_adam_60_kepler_dr25_balanced_from_scratch_model.pt'
+save_model:       False            # Save the trained model. Values: {True, False}
+purpose:         'from_scratch'   # NOTE. To be removed in future implementation. You can use it to take note of additional information in file names produced when running this module 
+#saved_model_name: '2025-09-29_resnet18_adam_60_kepler_dr25_balanced_from_scratch_model.pt' # Name of the trained model to be loaded. Check in trained_models folder

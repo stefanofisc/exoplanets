@@ -1,6 +1,7 @@
 model_name:   'resnet'  # name of the encoder to be used instead of the default 3-layer 100-neuron fully-connected neural network
 n_components: 3
-n_neighbors:  15
+n_neighbors:  50
 min_dist:     0.1
 metric:       'euclidean'
-n_epochs:     500
+n_epochs:     10
+normalize_data: True

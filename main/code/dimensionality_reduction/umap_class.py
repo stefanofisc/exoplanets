@@ -6,12 +6,14 @@ from    pandas                  import read_csv
 import  torch.nn                as nn
 import  numpy                   as np
 import  matplotlib.pyplot       as plt
-from    typing                  import Optional
+from    typing                  import Optional, Tuple, Dict
+
 from    umap.parametric_umap    import ParametricUMAP
 #from    umap                    import UMAP
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'utils'))
 from    utils                   import GlobalPaths, get_device, get_today_string
+from    numpy_data_processor    import NumpyDataProcessor
 from    logger                  import log
 
 sys.path.insert(1, str(GlobalPaths.DATASET))
@@ -20,7 +22,7 @@ from    dataset                 import Dataset
 sys.path.insert(2, str(GlobalPaths.FEATURE_EXTRACTION))
 from    resnet.resnet_class         import InputVariablesResnet
 from    resnet.resnet_tf_class      import ResNetTF
-from    vgg.vgg_class               import VGG19, InputVariablesVGG19       #NOTE To be modified
+from    vgg.vgg_class               import VGG19, InputVariablesVGG19       #TODO To be modified
 
 from sklearn.svm import SVC
 
@@ -38,6 +40,7 @@ class InputVariablesUMAP:
     _metric:        str
     _random_state:  Optional[int]
     _n_epochs:      Optional[int]
+    _normalize_data:Optional[bool]
 
     @classmethod
     def get_input_hyperparameters(cls, filename):
@@ -51,7 +54,8 @@ class InputVariablesUMAP:
             _min_dist      = config.get('min_dist', 0.1),
             _metric        = config.get('metric', 'euclidean'),
             _random_state  = config.get('random_state', 42),
-            _n_epochs      = config.get('n_epochs', 200)
+            _n_epochs      = config.get('n_epochs', 200),
+            _normalize_data=config.get('normalize_data', False)
             )
 
 class myUMAP:
@@ -66,11 +70,16 @@ class myUMAP:
         self.__model_hyperparameters_object = None                  # dati di input della CNN presi da config_vgg o config_resnet
         self.__model                        = self.__init_model()   # VGG19 or Resnet
         self.__umap_hyperparameters_object  = self.__init_umap_hyperparameters()
+        self.__numpy_processor              = None
 
         self.__encoder_instance             = self.__get_feature_extractor()
         self.__projected_features           = None
         self.__extracted_labels             = None # Loaded in project_data()
         self.__mapper                       = None # initialized in project_data()
+
+        # NOTE EXPERIMENTAL
+        self.__X_train_original             = None
+        self.__X_train_np                   = None
 
         log.info('UMAP class initialized.')
 
@@ -119,9 +128,14 @@ class myUMAP:
                 self.__model_hyperparameters_object.get_input_size(),
                 self.__model_hyperparameters_object.get_fc_output_size()
             )
-            log.info(f'Initialized {model_name} model.')
+            log.info(f'[✓] Initialized {model_name} model.')
+            
             return model
         
+        elif model_name == 'mlp':
+            # TODO model = MLP(crea architettura dinamica in file a parte?)
+            pass
+
         else:
             raise ValueError(f'Model {model_name} not supported for UMAP encoder.')
 
@@ -146,57 +160,101 @@ class myUMAP:
             self.__encoder_instance = full_model.get_feature_extraction_model()
 
             log.info("[✓] Feature extractor (ResNetTF) successfully created for Parametric UMAP.")
+            
+            print('Printing the architecture of the encoder')
+            print(self.__encoder_instance.summary())
 
         elif model_name == 'vgg':
-            # Future implementation: TensorFlow-based VGG19 encoder
+            #TODO Future implementation: TensorFlow-based VGG19 encoder
             log.warning("[!] VGG encoder extraction not implemented yet for TensorFlow version.")
             self.__encoder_instance = None
+        
+        elif model_name == 'mlp':
+            pass
 
         else:
             raise ValueError(f"Unsupported model '{model_name}' for UMAP encoder extraction.")
 
-    def project_data(self):
-        """
-            Addestra l'istanza di ParametricUMAP sull'encoder Resnet/VGG e proietta i dati nel sottospazio.
-        """
+    def __plot_loss(self, today, model_name, n_components):
+        print(self.__mapper._history)
+
+        fig = plt.figure(figsize=(10, 8))
+        plt.plot(self.__mapper._history['loss'])
+        plt.ylabel('Cross Entropy')
+        plt.xlabel('Epoch')
+
+        # Salvataggio plot
+        filename    = f'{today}_{model_name}_umap_{n_components}d_loss.png'
+        filepath    = GlobalPaths.PLOT_MANIFOLD_LEARNING / filename
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        
+        plt.savefig(filepath, dpi=600)
+        plt.close(fig)
+
+        log.info(f"[✓] Plot of loss function saved in: {filepath}")
+
+    def __data_preparation(self, normalize_data: bool = True):
         # 1. Loading training data
         X_train_full, Y_train_full, _, _ = self.__dataset_handler.get_training_test_samples()
-        
+        self.__X_train_original = X_train_full
+
         # 2. Converting into numpy.ndarray
         X_train_np = X_train_full.cpu().numpy()
         Y_train_np = Y_train_full.cpu().numpy()
-            
-        # 3. Initializing ParametricUMAP
+
+        # 3. Normalize data in 0-1 as requested by umap
+        if normalize_data:
+            self.__numpy_processor = NumpyDataProcessor(X_train_np)
+            X_norm, _ = self.__numpy_processor.normalize_global_views_to_median1_min0(
+                per_sample       = True,
+                return_transform = False
+                )
+            return X_norm, Y_train_np
+        
+        return X_train_np, Y_train_np
+        
+    def project_data(self):
+        """
+            Addestra l'istanza di ParametricUMAP sull'encoder Resnet/VGG/MLP e proietta i dati nel sottospazio.
+        """
+        # 1. Initializing ParametricUMAP
         self.__mapper = ParametricUMAP(
             encoder     =   self.__encoder_instance,
             n_components=   self.__umap_hyperparameters_object._n_components,
             n_neighbors =   self.__umap_hyperparameters_object._n_neighbors,
             min_dist    =   self.__umap_hyperparameters_object._min_dist,
             metric      =   self.__umap_hyperparameters_object._metric,
-            random_state=   self.__umap_hyperparameters_object._random_state,
+            #random_state=   self.__umap_hyperparameters_object._random_state,
             n_epochs    =   self.__umap_hyperparameters_object._n_epochs,
             parametric_reconstruction = True
         )
-        
         log.info(f"Projecting with Parametric UMAP ({self.__umap_hyperparameters_object._n_components}D)...")
-        
-        # 4. Fit the model
-        self.__mapper.fit(X_train_np, Y_train_np)
 
-        self.__projected_features = self.__mapper.transform(X_train_np)
+        # 2. Get the data
+        self.__X_train_np, Y_train_np = self.__data_preparation(self.__umap_hyperparameters_object._normalize_data)
+        
+        # 3. Fit the model
+        self.__mapper.fit(self.__X_train_np, Y_train_np)
+
+        self.__projected_features = self.__mapper.transform(self.__X_train_np)
         self.__extracted_labels   = Y_train_np
 
         log.info(f"[✓] Parametric UMAP proiezione completata. Shape: {self.__projected_features.shape}")
 
-
-    def classify_data(self):
+    def classify_data(self): 
+        #TODO Richiamare l'oggetto della classe definita in classifier.py
         _, _, X_test_full, Y_test_full = self.__dataset_handler.get_training_test_samples()
 
         X_test_np = X_test_full.cpu().numpy()
         Y_test_np = Y_test_full.cpu().numpy()
 
         # Train the support vector machine
-        svc = SVC().fit(self.__projected_features, self.__extracted_labels)
+        svc = SVC(
+            kernel  = 'rbf',
+            C       = 1.0,
+            gamma   = 'scale',
+            decision_function_shape = 'ovo'
+        ).fit(self.__projected_features, self.__extracted_labels)
 
         print('train: ', svc.score(self.__projected_features, self.__extracted_labels))
         print('test: ', svc.score(self.__mapper.transform(X_test_np), Y_test_np))
@@ -204,9 +262,12 @@ class myUMAP:
     def save_projected_data(self):
         pass
 
-    def plot_projection(self):
+    def plot_results(self):
         """
-            Genera un plot 2D o 3D (statico) dei dati proiettati, colorati per classe.
+            This method generates two plots showing:
+                - data projected in two (or three) dimensions.
+                - loss function.
+            #TODO Estendi nome file del salvataggio
         """
         if self.__projected_features is None:
             log.error("Proiezione non eseguita. Chiamare project_data() prima di plottare.")
@@ -262,12 +323,23 @@ class myUMAP:
         filepath.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(filepath, dpi=600)
         plt.close(fig)
-        log.info(f"[✓] Plot salvato in: {filepath}")
+        log.info(f"[✓] Plot of projected data saved in: {filepath}")
+
+        # Plotting the loss function
+        self.__plot_loss(today, model_name, n_components)
+
+        # Plotting global views
+        filename_gv = f'{today}_{model_name}_umap_{n_components}d_globalviews.png'
+        self.__numpy_processor.plot_sample_global_views(
+            self.__X_train_np,
+            self.__X_train_original,
+            filename_gv
+            )
 
     def main(self):
         self.project_data()
         #self.save_projected_data()
-        self.plot_projection()
+        self.plot_results()
         self.classify_data()
     
     def __del__(self):

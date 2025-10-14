@@ -83,9 +83,11 @@ class ResNetTF(models.Model):
         # Set the architecture based on the number of layers given as input
         if num_layers == 18:
             layers_config = [2, 2, 2, 2] # ResNet-18
-        else:
+        elif num_layers == 34:
             layers_config = [3, 4, 6, 3] # ResNet-34
-        
+        else:
+            raise ValueError(f'Got {num_layers}, while expecting values of 18 or 34!')
+
         self.inplanes    = 64
         self.input_size  = input_size
         self.output_size = output_size

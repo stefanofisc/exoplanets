@@ -1,4 +1,8 @@
-# dataset_filename values: {kepler_q1-q17_dr24_multiclass.csv, kepler_q1-q17_dr25_multiclass.csv, tess_tey2023_multiclass_ycategorical.csv, plato_FittedEvents_phaseflux_original_multiclass.csv}
+# dataset_filename values: {
+# kepler_q1-q17_dr24_multiclass.csv, 
+# kepler_q1-q17_dr25_multiclass.csv, 
+# tess_tey2023_multiclass_ycategorical.csv, 
+# plato_FittedEvents_phaseflux_original_multiclass.csv }
 dataset_filename: 'kepler_q1-q17_dr25_balanced_multiclass.csv'
 
 # catalog_name values: 
@@ -17,17 +21,17 @@ catalog_name:     'kepler_dr25_balanced'
 # salvataggio di nuovi train-test split, non verrà eseguito.
 initialize_from_scratch: False
 
-# Mappatura etichette opzionale
-# Consente di processare pandas DataFrame con etichette dai valori categorici, convertendole in valori interi.
+# [Optional] Mapping the labels
+# If your pandas DataFrame has categorical values you can set the mapping to integer here.
 #mapping:
 #  B: 0
 #  E: 1
 #  J: 2
 
-# Opzionale. Percentuale di dati da destinare al test set (float in (0, 1)). Irrilevante se setti load_tensors=True
+# [Optional] Percentuale di dati da destinare al test set (float in (0, 1)). Irrilevante se setti load_tensors=True
 test_size: 0.2
 
-# Opzionale. Scegli se splittare il dataframe in train-test, e se salvarli in csv, TensorDataset o numpy.ndarray
+# [Optional] Scegli se splittare il dataframe in due split di train e test, e se salvarli in formato csv, TensorDataset o numpy.ndarray
 dataset_save_split_format: 'tensor' # csv, tensor, numpy
 
 # Scegli se caricare direttamente i file di input in formato tensoriale
